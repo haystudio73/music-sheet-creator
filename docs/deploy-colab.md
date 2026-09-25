@@ -44,8 +44,8 @@ Chạy cell sau để cài đặt các thư viện cần thiết cho FastAPI và
 # 1. Cài các thư viện backend API
 !pip install -q fastapi uvicorn python-multipart pydantic music21 mido httpx
 
-# 2. Cài các thư viện AI phục vụ SheetSage2 (huggingface-hub mới tương thích môi trường Colab)
-!pip install -q transformers==4.45.2 "huggingface-hub>=1.23.0" safetensors mir_eval pretty_midi
+# 2. Cài các thư viện AI phục vụ SheetSage2
+!pip install -q transformers==4.45.2 "huggingface-hub>=0.23.2,<1.0" safetensors mir_eval pretty_midi
 ```
 
 ---
