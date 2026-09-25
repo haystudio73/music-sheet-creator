@@ -1,0 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Birthstone&display=swap");
+@font-face{font-family:"Noto Sans";src:url("/fonts/notosans.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Serif";src:url("/fonts/notoserif.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Roboto";src:url("/fonts/roboto.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Open Sans";src:url("/fonts/opensans.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Lora";src:url("/fonts/lora.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Merriweather";src:url("/fonts/merriweather.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Nunito";src:url("/fonts/nunito.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Source Sans 3";src:url("/fonts/sourcesans3.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Source Serif 4";src:url("/fonts/sourceserif4.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:"Birthstone";src:local("Birthstone"),url("/fonts/birthstone.ttf") format("truetype");font-style:normal;font-weight:400;font-display:swap}

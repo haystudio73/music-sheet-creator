@@ -1,0 +1,44 @@
+[
+  {
+    "instrument": "acoustic_grand_piano",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_grand_piano-mp3.js",
+    "source_sha256": "00eebe0214c12ff8f32c47c2f7ac92ef352800e868ab0f883b80854486ac4ca6",
+    "json_sha256": "3ecf74e2f674056f1a1b82830b228b5d788e9036afc7eb290adc1fffeea7dca1",
+    "samples": 88
+  },
+  {
+    "instrument": "acoustic_guitar_nylon",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_guitar_nylon-mp3.js",
+    "source_sha256": "5375fa9e0408d960e12b6e4ec120c42bce824d80b18e982b27ddaece146a4f64",
+    "json_sha256": "3e9d6f62ac01b2fb039dfc1ba5ff58c935257b9d7ad7e507a447d9bd0124d0e3",
+    "samples": 88
+  },
+  {
+    "instrument": "violin",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/violin-mp3.js",
+    "source_sha256": "3c169ac4c7781fe145e545e909993371188aa6bad617bc3a5f0692b7678995f8",
+    "json_sha256": "0e03a7354c25a54821a06df1d8e46c6a1d5256df5f087032b385cc08d1c163ac",
+    "samples": 88
+  },
+  {
+    "instrument": "flute",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/flute-mp3.js",
+    "source_sha256": "e2e35283876eec60b919beeb8bfa49f46f12dddf5b8c6025e7a45c5d2a24bda5",
+    "json_sha256": "dad9fc62d40e677d930b8903c5db7049577f1eb37cf97bc6289b215c80fcb2f6",
+    "samples": 88
+  },
+  {
+    "instrument": "clarinet",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/clarinet-mp3.js",
+    "source_sha256": "ef38d445ba297b459c1be464080ef37ddf48d9255ee3e517067ce1d11fab6eac",
+    "json_sha256": "adfcb445b898663c74f8b5e3f1f7d20a1371f337ae7c37a57ede35a1934ef51f",
+    "samples": 88
+  },
+  {
+    "instrument": "acoustic_bass",
+    "source": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_bass-mp3.js",
+    "source_sha256": "7b6d656613f2b8e2e73526317543a491c630bd5dab4426c54dae55f67dfd1e91",
+    "json_sha256": "73694bec951f26497807f842cd9454d19c47fa55955d70e62e06163939aab179",
+    "samples": 88
+  }
+]

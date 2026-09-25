@@ -1,0 +1,43 @@
+async page => {
+const score={"schema_version": 1, "revision": 1, "title": "Playback test", "tempo": 60, "meter": [4, 4], "key": "C", "notes": [{"id": "n0", "pitch": 60, "start": "0", "duration": "1", "velocity": 80, "source_start": null, "source_end": null}, {"id": "n1", "pitch": 62, "start": "2", "duration": "4", "velocity": 80, "source_start": null, "source_end": null}, {"id": "n2", "pitch": 64, "start": "7", "duration": "1", "velocity": 80, "source_start": null, "source_end": null}], "harmonies": [], "lyrics": [], "diagnostics": [], "source_engine": "monophonic", "review_status": "needs_review", "melody_role": "instrumental"};
+const xml="<?xml version='1.0' encoding='utf-8'?>\n<score-partwise version=\"4.0\">\n  <work>\n    <work-title>Playback test</work-title>\n  </work>\n  <movement-title>Playback test</movement-title>\n  <identification>\n    <encoding>\n      <software>Local Lead Sheet</software>\n      <encoding-description>Giai \u00c4\u2018i\u00e1\u00bb\u2021u v\u00c3\u00a0 h\u00e1\u00bb\u00a3p \u00c3\u00a2m; tempo v\u00c3\u00a0 s\u00e1\u00bb\u2018 ch\u00e1\u00bb\u2030 nh\u00e1\u00bb\u2039p c\u00e1\u00bb\u2018 \u00c4\u2018\u00e1\u00bb\u2039nh.</encoding-description>\n    </encoding>\n  </identification>\n  <defaults>\n    <scaling>\n      <millimeters>7</millimeters>\n      <tenths>40</tenths>\n    </scaling>\n  </defaults>\n  <part-list>\n    <score-part id=\"P1\">\n      <part-name>Giai \u00c4\u2018i\u00e1\u00bb\u2021u</part-name>\n    </score-part>\n  </part-list>\n  <part id=\"P1\">\n    <measure number=\"1\">\n      <attributes>\n        <divisions>480</divisions>\n        <key>\n          <fifths>0</fifths>\n          <mode>major</mode>\n        </key>\n        <time>\n          <beats>4</beats>\n          <beat-type>4</beat-type>\n        </time>\n        <clef>\n          <sign>G</sign>\n          <line>2</line>\n        </clef>\n      </attributes>\n      <direction placement=\"above\">\n        <direction-type>\n          <metronome>\n            <beat-unit>quarter</beat-unit>\n            <per-minute>60</per-minute>\n          </metronome>\n        </direction-type>\n        <sound tempo=\"60\" />\n      </direction>\n      <note>\n        <pitch>\n          <step>C</step>\n          <octave>4</octave>\n        </pitch>\n        <duration>480</duration>\n        <voice>1</voice>\n        <type>quarter</type>\n      </note>\n      <note>\n        <rest />\n        <duration>480</duration>\n        <voice>1</voice>\n        <type>quarter</type>\n      </note>\n      <note>\n        <pitch>\n          <step>D</step>\n          <octave>4</octave>\n        </pitch>\n        <duration>960</duration>\n        <tie type=\"start\" />\n        <voice>1</voice>\n        <type>half</type>\n        <notations>\n          <tied type=\"start\" />\n        </notations>\n      </note>\n    </measure>\n    <measure number=\"2\">\n      <note>\n        <pitch>\n          <step>D</step>\n          <octave>4</octave>\n        </pitch>\n        <duration>960</duration>\n        <tie type=\"stop\" />\n        <voice>1</voice>\n        <type>half</type>\n        <notations>\n          <tied type=\"stop\" />\n        </notations>\n      </note>\n      <note>\n        <rest />\n        <duration>480</duration>\n        <voice>1</voice>\n        <type>quarter</type>\n      </note>\n      <note>\n        <pitch>\n          <step>E</step>\n          <octave>4</octave>\n        </pitch>\n        <duration>480</duration>\n        <voice>1</voice>\n        <type>quarter</type>\n      </note>\n      <barline location=\"right\">\n        <bar-style>light-heavy</bar-style>\n      </barline>\n    </measure>\n  </part>\n</score-partwise>";
+
+  await page.route('**/api/projects/*/score', route => route.fulfill({json:score}));
+  await page.route('**/api/projects/*/preview?*', route => route.fulfill({body:xml,contentType:'application/xml'}));
+  await page.reload();
+  const play = page.getByRole('button', {name:'Phát giai điệu dựng lại',exact:true});
+  const seek = page.getByRole('slider', {name:'Vị trí phát giai điệu dựng lại',exact:true});
+  await play.waitFor();
+  await page.locator('.notation-container svg').first().waitFor();
+  await page.getByRole('checkbox', {name:'Tự cuộn theo nốt'}).uncheck();
+  await play.click();
+  await page.waitForFunction(() => document.querySelector('.playback-active-note'));
+  const first = await page.locator('.playback-active-note').getAttribute('id');
+  await seek.fill('1.2');
+  await page.waitForTimeout(80);
+  if (await page.locator('.playback-active-note').count()) throw Error('Rest incorrectly highlighted');
+  await seek.fill('2.2');
+  await page.waitForTimeout(80);
+  const tieStart = await page.locator('.playback-active-note').getAttribute('id');
+  await seek.fill('4.2');
+  await page.waitForTimeout(80);
+  const tieEnd = await page.locator('.playback-active-note').getAttribute('id');
+  if (tieStart === tieEnd || first === tieStart) throw Error('Highlight did not follow tied segments');
+  await page.setViewportSize({width:1000,height:700});
+  await page.waitForTimeout(350);
+  if (await page.locator('.playback-active-note').count() !== 1) throw Error('Resize lost highlighting');
+  await page.getByRole('button', {name:'Dừng giai điệu dựng lại',exact:true}).click();
+  await page.getByRole('tab', {name:/^Giai điệu/}).click();
+  await page.getByRole('spinbutton', {name:'Cao độ nốt 1',exact:true}).fill('65');
+  await page.getByRole('tab', {name:'Khuông nhạc',exact:true}).click();
+  await play.click();
+  await page.waitForTimeout(250);
+  if (await page.locator('.playback-active-note').count()) throw Error('Unsaved score highlights stale notation');
+  await page.getByRole('button', {name:'Dừng giai điệu dựng lại',exact:true}).click();
+  page.once('dialog', d => d.accept());
+  await page.unroute('**/api/projects/*/score');
+  await page.unroute('**/api/projects/*/preview?*');
+  await page.reload();
+  await page.setViewportSize({width:1440,height:1000});
+  return {passed:['rests clear highlight','tie follows written segment across barline','resize preserves highlight','unsaved changes suppress stale highlight'],first,tieStart,tieEnd};
+}

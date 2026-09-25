@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MusicXML Editor · Bản nhạc</title>
+  <link rel="stylesheet" href="/editor.css">
+</head><body>
+  <header class="editor-header"><a id="back" href="/">← <span data-copy="back">Back to project</span></a><h1 id="title">MusicXML Editor</h1><div class="editor-actions"><button id="save" disabled data-copy="save">Save to project</button><button id="download" disabled data-copy="download">Download MusicXML</button></div></header>
+  <p class="editor-help" data-copy="help">Select a note: A–G sets pitch, =/− transposes, comma/period changes duration. Use Smoosic’s menus for measures, lyrics and layout, then Save to project.</p>
+  <p class="editor-help" data-copy="storage">Editor edits are saved as a separate MusicXML version in this project. The transcription and its exports stay at the checked source revision.</p>
+  <p class="editor-help" data-copy="audio">Editor playback uses the bundled piano sound for all instruments.</p>
+  <p id="status" role="status">Loading current project…</p>
+  <iframe id="notation-editor" title="Smoosic notation editor" src="/smoosic-frame.html"></iframe>
+  <script src="/editor.js" defer></script>
+</body></html>

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "sheetsage2": {
+    "id": "m-a-p/SheetSage2",
+    "revision": "80af707174fc7ee521c25925d5f014729f0e61ae",
+    "parent_id": "m-a-p/MERT-v2-FullSong",
+    "parent_revision": "d8ba1c745e733b3908ce6ad16ebeb17ac7600a42",
+    "parent_weights_sha256": "e6dd2ab187d6dd62b6521cd7d8f932e237acf0c5757745a7232082e28391350d",
+    "weights_license": "CC-BY-NC-4.0",
+    "code_license": "See upstream LICENSE and THIRD_PARTY_NOTICES; independent blanket code license not verified",
+    "source": "https://huggingface.co/m-a-p/SheetSage2",
+    "reviewed_at": "2026-09-19",
+    "runtime": "Python 3.11; torch 2.8.0+cu126; transformers 4.45.2",
+    "adapter_version": "0.1.0",
+    "sample_rate": 24000,
+    "window_seconds": 300,
+    "status": "experimental"
+  }
+}

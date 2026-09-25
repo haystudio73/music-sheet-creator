@@ -1,0 +1,33 @@
+import { t } from './i18n';
+import { Plus, Trash2 } from 'lucide-react';
+import type { ScoreDocument } from './types';
+export const pitchLabel = (pitch: number) => `${['C', t("C♯"), 'D', t("E♭"), 'E', 'F', t("F♯"), 'G', t("A♭"), 'A', t("B♭"), 'B'][((pitch % 12) + 12) % 12]}${Math.floor(pitch / 12) - 1}`;
+const qualities = [['major', t("Trưởng")], ['minor', t("Thứ")], ['dominant-seventh', '7'], ['major-seventh', 'maj7'], ['minor-seventh', 'm7'], ['diminished', 'dim'], ['augmented', 'aug'], ['suspended-second', 'sus2'], ['suspended-fourth', 'sus4']];
+const roots = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+const fraction = (value: string) => { const [a, b = '1'] = value.split('/'); const result = Number(a) / Number(b); return Number.isFinite(result) ? result : 0; };
+const nextStart = (items: {
+    start: string;
+    duration: string;
+}[]) => String(Math.ceil(Math.max(0, ...items.map(item => fraction(item.start) + fraction(item.duration)))));
+export default function ScoreEditor({ score, tab, change, disabled }: {
+    score: ScoreDocument;
+    tab: 'notes' | 'harmonies';
+    change: (next: ScoreDocument) => void;
+    disabled: boolean;
+}) {
+    const editNote = (id: string, field: string, value: number | string) => change({ ...score, notes: score.notes.map(note => note.id === id ? { ...note, [field]: value } : note) });
+    const editHarmony = (id: string, field: string, value: string | null) => change({ ...score, harmonies: score.harmonies.map(chord => chord.id === id ? { ...chord, [field]: value } : chord) });
+    return <section className="editor-panel">
+    <div className="editor-intro"><div><h2>{tab === 'notes' ? t("Chỉnh giai điệu") : t("Chỉnh hợp âm")}</h2><p>{t("Vị trí và trường độ tính theo phách đen, bắt đầu từ 0. Dùng phân số như 1/2 hoặc 3/2.")}</p></div><button className="button secondary compact" disabled={disabled} onClick={() => {
+            if (tab === 'notes')
+                change({ ...score, notes: [...score.notes, { id: crypto.randomUUID(), pitch: 60, start: nextStart(score.notes), duration: '1', velocity: 80, source_start: null, source_end: null }] });
+            else
+                change({ ...score, harmonies: [...score.harmonies, { id: crypto.randomUUID(), root: 'C', quality: 'major', bass: null, start: nextStart(score.harmonies), duration: '4', kind: 'chord' }] });
+        }}><Plus size={15}/>{tab === 'notes' ? t("Thêm nốt") : t("Thêm hợp âm")}</button></div>
+    <div className="table-scroll"><table className="score-table"><caption className="sr-only">{tab === 'notes' ? t("Danh sách nốt giai điệu") : t("Danh sách hợp âm")}</caption>
+      {tab === 'notes' ? <><thead><tr><th>#</th><th>{t("Nốt")}</th><th>{t("Cao độ MIDI")}</th><th>{t("Vị trí")}</th><th>{t("Trường độ")}</th><th>{t("Cường độ")}</th><th><span className="sr-only">{t("Xóa")}</span></th></tr></thead><tbody>{score.notes.map((note, index) => <tr key={note.id}><td className="row-index">{String(index + 1).padStart(2, '0')}</td><td className="pitch-name">{pitchLabel(note.pitch)}</td><td><input type="number" min="0" max="127" aria-label={t("Cao độ nốt {0}", { "0": index + 1 })} value={note.pitch} disabled={disabled} onChange={e => editNote(note.id, 'pitch', Number(e.target.value))}/></td><td><input aria-label={t("Vị trí nốt {0}", { "0": index + 1 })} value={note.start} disabled={disabled} onChange={e => editNote(note.id, 'start', e.target.value)}/></td><td><input aria-label={t("Trường độ nốt {0}", { "0": index + 1 })} value={note.duration} disabled={disabled} onChange={e => editNote(note.id, 'duration', e.target.value)}/></td><td><input type="number" min="1" max="127" aria-label={t("Cường độ nốt {0}", { "0": index + 1 })} value={note.velocity} disabled={disabled} onChange={e => editNote(note.id, 'velocity', Number(e.target.value))}/></td><td><button className="icon-button" disabled={disabled} aria-label={t("Xóa nốt {0}", { "0": index + 1 })} onClick={() => change({ ...score, notes: score.notes.filter(n => n.id !== note.id), lyrics: (score.lyrics || []).map(token => token.note_id === note.id ? { ...token, note_id: null } : token) })}><Trash2 size={15}/></button></td></tr>)}</tbody></>
+            : <><thead><tr><th>#</th><th>{t("Loại")}</th><th>{t("Gốc")}</th><th>{t("Tính chất")}</th><th>{t("Bass")}</th><th>{t("Vị trí")}</th><th>{t("Trường độ")}</th><th><span className="sr-only">{t("Xóa")}</span></th></tr></thead><tbody>{score.harmonies.map((chord, index) => <tr key={chord.id}><td className="row-index">{String(index + 1).padStart(2, '0')}</td><td><select aria-label={t("Loại hợp âm {0}", { "0": index + 1 })} value={chord.kind} disabled={disabled} onChange={e => editHarmony(chord.id, 'kind', e.target.value)}><option value="chord">{t("Hợp âm")}</option><option value="no_chord">{t("Không hợp âm")}</option><option value="unknown">{t("Chưa xác định")}</option></select></td><td><select aria-label={t("Nốt gốc hợp âm {0}", { "0": index + 1 })} value={chord.root} disabled={disabled || chord.kind !== 'chord'} onChange={e => editHarmony(chord.id, 'root', e.target.value)}>{roots.map(root => <option key={root}>{root}</option>)}</select></td><td><select aria-label={t("Tính chất hợp âm {0}", { "0": index + 1 })} value={chord.quality} disabled={disabled || chord.kind !== 'chord'} onChange={e => editHarmony(chord.id, 'quality', e.target.value)}>{qualities.map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}</select></td><td><select aria-label={t("Nốt bass hợp âm {0}", { "0": index + 1 })} value={chord.bass || ''} disabled={disabled || chord.kind !== 'chord'} onChange={e => editHarmony(chord.id, 'bass', e.target.value || null)}><option value="">—</option>{roots.map(root => <option key={root}>{root}</option>)}</select></td><td><input aria-label={t("Vị trí hợp âm {0}", { "0": index + 1 })} value={chord.start} disabled={disabled} onChange={e => editHarmony(chord.id, 'start', e.target.value)}/></td><td><input aria-label={t("Trường độ hợp âm {0}", { "0": index + 1 })} value={chord.duration} disabled={disabled} onChange={e => editHarmony(chord.id, 'duration', e.target.value)}/></td><td><button className="icon-button" disabled={disabled} aria-label={t("Xóa hợp âm {0}", { "0": index + 1 })} onClick={() => change({ ...score, harmonies: score.harmonies.filter(h => h.id !== chord.id) })}><Trash2 size={15}/></button></td></tr>)}</tbody></>}
+    </table></div>
+    {(tab === 'notes' ? score.notes : score.harmonies).length === 0 && <p className="table-empty">{tab === 'notes' ? t("Chưa có nốt giai điệu. Bạn có thể thêm và chỉnh thủ công.") : t("Chưa có hợp âm. Nhấn “Thêm hợp âm” để ghi các hợp âm đã nghe được.")}</p>}
+  </section>;
+}
