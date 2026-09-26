@@ -478,5 +478,69 @@
   }
 }
 
+/* ==========================================================================
+   Step Focus Outlines & Action Highlights
+   ========================================================================== */
 
+.step-focus {
+  outline: 2px solid var(--accent, #002fa7) !important;
+  outline-offset: -1px;
+  box-shadow: 0 0 0 4px rgba(0, 47, 167, 0.12), 0 4px 16px rgba(0, 47, 167, 0.08) !important;
+  transition: outline 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+  border-color: var(--accent, #002fa7) !important;
+  position: relative;
+}
 
+[data-theme="dark"] .step-focus {
+  outline: 2px solid var(--accent, #3d75ff) !important;
+  box-shadow: 0 0 0 4px rgba(61, 117, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  border-color: var(--accent, #3d75ff) !important;
+}
+
+.step-active-action {
+  box-shadow: 0 0 0 3px rgba(0, 47, 167, 0.25) !important;
+  animation: stepActionPulse 2s infinite !important;
+}
+
+@keyframes stepActionPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(0, 47, 167, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 47, 167, 0.12);
+  }
+}
+
+.step-focus-export {
+  outline: 2px dashed var(--accent, #002fa7) !important;
+  outline-offset: 4px;
+  border-radius: 4px;
+  padding: 4px;
+  background: var(--accent-soft, #f3f5fb);
+}
+
+[data-theme="dark"] .step-focus-export {
+  outline-color: var(--accent, #3d75ff) !important;
+  background: rgba(61, 117, 255, 0.08);
+}
+
+/* Analyze Audio button styling: vibrant blue primary button with subtle elevation */
+.analyze-audio-btn,
+.button.analyze-audio-btn,
+button.primary.analyze-audio-btn {
+  background: var(--accent, #002fa7) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--accent, #002fa7) !important;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 47, 167, 0.22);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analyze-audio-btn:hover:not(:disabled),
+.button.analyze-audio-btn:hover:not(:disabled),
+button.primary.analyze-audio-btn:hover:not(:disabled) {
+  background: var(--accent-hover, #002480) !important;
+  border-color: var(--accent-hover, #002480) !important;
+  box-shadow: 0 4px 12px rgba(0, 47, 167, 0.32);
+  transform: translateY(-1px);
+}
