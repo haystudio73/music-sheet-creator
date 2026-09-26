@@ -14,7 +14,7 @@ async function fetchFont(): Promise<ArrayBuffer> {
   if (!response || !response.ok) {
     response = await fetch(`./fonts/${FONT_FILE}`).catch(() => null);
   }
-  if (!response.ok) throw new Error(t('Không tải được font để xuất PDF. Vui lòng tải lại trang và thử lại.'));
+  if (!response || !response.ok) throw new Error(t('Không tải được font để xuất PDF. Vui lòng tải lại trang và thử lại.'));
   const bytes = await response.arrayBuffer();
   // Use the exact same font bytes for browser measurement and PDF embedding.
   const font = await new FontFace(FONT_FAMILY, bytes).load();
