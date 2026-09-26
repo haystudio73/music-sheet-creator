@@ -58,3 +58,22 @@ Mục tiêu: hoàn thiện luồng chỉnh sửa khuông nhạc, undo, cảnh b�
 - [x] Yêu cầu bổ sung: `test_notation.py`, `test_editor.py`, `test_api.py` — 56 passed.
 - [x] Âm lượng nghe thử: slider vẫn 0–100%, tại 100% gain nhạc cụ là 0.8 (5× mức cũ); metronome/audio gốc không đổi; playback regression PASS.
 - [x] Vị trí box edit: bám nốt đang chọn khi scroll/resize/render lại, nằm dưới nốt với khoảng cách 10 px và trong cột khuông; production build + Playwright edit regression PASS.
+
+## Tiến độ task 2026-09-26
+
+Mục tiêu: hoàn tất kiểm tra tải xuống PDF, kiểm tra bố cục, cập nhật hướng dẫn sử dụng và cho phép chỉnh sửa tên bài hát.
+
+### Yêu cầu
+
+- [x] Kiểm tra tải xuống PDF: đủ 8 trang, đủ 630 từ lời bài hát và 80 hợp âm của bản thử nghiệm cô lập.
+- [x] Xuất trích đoạn theo ô nhịp: chỉ bao gồm các ô nhịp đã chọn, hỗ trợ tùy chọn kèm/bỏ hợp âm và lời.
+- [x] Đồng nhất bản in: bản xuất từ màn hình điện thoại (mobile viewport) và giao diện tối (dark theme) cho cùng nội dung, định dạng và kích thước bản in vector A4 như desktop light theme.
+- [x] Hoàn tất kiểm tra bố cục và cập nhật hướng dẫn sử dụng trong tài liệu `docs/PDF-QA.md` và modal hướng dẫn workflow `frontend/src/Settings.tsx`.
+- [x] Cho phép chỉnh sửa tên bài hát:
+  - Sửa trực tiếp tại tiêu đề chính `<h1>` với nút bút chì, click để sửa, phím tắt Enter (lưu) / Escape (hủy), nút Lưu và Hủy.
+  - Sửa trong khung Inspector bên phải (mục "Thiết lập bản nhạc" / "Thiết lập âm nhạc").
+  - Hỗ trợ đổi tên bài hát ngay sau khi upload audio (trước khi phân tích) và sau khi đã tạo bản nhạc.
+  - API `PATCH /api/projects/{id}` cập nhật tên bài hát / dự án, tự động đồng bộ score revision khi có bản nhạc.
+  - Kiểm thử backend `test_update_project_title` passed (148/148 passed).
+  - TypeScript / Vite production build PASS.
+

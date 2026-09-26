@@ -30,6 +30,6 @@ Lời chưa gắn nốt được giữ để sửa, chưa in trên sheet. Cần 
 
 ## Hiển thị và xuất
 
-Web UI hiển thị revision đã lưu bằng OpenSheetMusicDisplay. MusicXML ghi `lyric` trên lần phát đầu mỗi nốt; PDF do MuseScore dàn từ cùng MusicXML. Các đoạn nối trường độ không lặp chữ. Chưa có tô sáng karaoke hoặc tổng hợp giọng hát; nút nghe phát giai điệu bằng một trong sáu bộ mẫu nhạc cụ local.
+Web UI hiển thị revision đã lưu bằng OpenSheetMusicDisplay. MusicXML ghi `lyric` trên lần phát đầu mỗi nốt; PDF do OpenSheetMusicDisplay dàn trang A4 từ cùng MusicXML rồi jsPDF/svg2pdf.js tạo file trực tiếp trong trình duyệt, với font Noto Sans nhúng sẵn. Các đoạn nối trường độ không lặp chữ. Chưa có tô sáng karaoke hoặc tổng hợp giọng hát; nút nghe phát giai điệu bằng một trong sáu bộ mẫu nhạc cụ local.
 
 Lưu chỉnh sửa và bấm **Xác nhận đã kiểm tra** mới được tải MusicXML/MIDI/PDF. Nhập lại lời hoặc lưu thay đổi sẽ đặt bản nhạc về trạng thái cần kiểm tra, đồng thời khóa tải cho đến khi xác nhận lại.

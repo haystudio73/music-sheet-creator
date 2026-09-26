@@ -110,6 +110,18 @@ class Store:
                 audio_hash, duration, "ready", None, None, client_ip, session_id))
         return self.project(project_id)
 
+    def update_project_title(self, project_id: str, title: str):
+        title = title.strip()
+        if not title or len(title) > 200:
+            raise ValueError("Tên bài hát cần từ 1 đến 200 ký tự.")
+        with self.lock, self.connect() as db:
+            self.require_active(db, project_id)
+            if not db.execute("SELECT 1 FROM projects WHERE id=?", (project_id,)).fetchone():
+                raise KeyError(project_id)
+            db.execute("UPDATE projects SET title=?, updated_at=? WHERE id=?", (title, now(), project_id))
+        return self.project(project_id)
+
+
     @staticmethod
     def require_active(db, project_id):
         if db.execute("SELECT 1 FROM deleted_projects WHERE project_id=?", (project_id,)).fetchone():

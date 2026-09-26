@@ -15,7 +15,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
-Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` trong PATH), và MuseScore 4 để xuất PDF. `setup.ps1` tạo runtime Python 3.12 và cài đúng các phiên bản trong `requirements.lock`. Python của model dùng môi trường 3.11 riêng. Không cần Node.js khi chỉ chạy frontend đã build.
+Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` trong PATH). `setup.ps1` tạo runtime Python 3.12 và cài đúng các phiên bản trong `requirements.lock`. Python của model dùng môi trường 3.11 riêng. Không cần Node.js khi chỉ chạy frontend đã build. PDF được tạo trực tiếp trong trình duyệt bằng JavaScript, không cần cài MuseScore.
 
 Triển khai online: xem [Hướng dẫn cài đặt trên Vercel](docs/HUONG-DAN-CAI-DAT-VERCEL.md) (kết nối web UI Vercel với backend) hoặc [Hướng dẫn chạy trên Google Colab GPU T4](docs/deploy-colab.md).
 
@@ -43,13 +43,13 @@ Xem [hướng dẫn model](docs/model-setup.md) về phiên bản, bộ nhớ, �
 3. **Phân tích bản nhạc:** chọn engine, nguồn melody (nhạc cụ/giọng hát), chỉnh thông số rồi chạy phiên âm. Có thể hủy tác vụ.
 4. **Lời hát (tùy chọn):** nhập SRT/LRC, căn và sửa lời. Có thể xóa/reset rồi nhập lại.
 5. **Kiểm tra:** nghe audio gốc và bản dựng lại, sửa nốt/hợp âm/lời; lưu rồi bấm **Xác nhận đã kiểm tra**.
-6. **Tải xuống:** MusicXML, MIDI, PDF hoặc ABC chỉ mở khi bản hiện tại đã được xác nhận. Sửa tiếp sẽ yêu cầu lưu và kiểm tra lại.
+6. **Tải xuống:** MusicXML, MIDI, PDF hoặc ABC chỉ mở khi bản hiện tại đã được xác nhận. Sửa tiếp sẽ yêu cầu lưu và kiểm tra lại. PDF dàn trang A4 tự động bằng OpenSheetMusicDisplay và tạo file vector bằng jsPDF/svg2pdf.js; giữ tùy chọn trích ô nhịp, hợp âm và lời hát. Font Noto Sans được nhúng để giữ dấu tiếng Việt khi in. Thư viện và font được đóng gói local; không gọi dịch vụ tạo PDF bên ngoài.
 
 Mỗi lần lưu tạo revision mới. Phân tích lại một dự án đã có sheet tạo bản nháp riêng; phải chọn sử dụng thì mới thay bản đang chỉnh. API chỉ cho tải revision hiện tại đã xác nhận; đường tải file cũ cũng bị khóa sau khi lưu bản sửa. Xem khuông nhạc và nghe thử vẫn dùng được trước khi xác nhận.
 
 Khi nghe giai điệu dựng lại, kéo thanh vị trí để tua tới/lùi (cũng dùng được trước khi bấm phát), chỉnh **Âm lượng** từ 0–100%. Ở mức 100%, gain nhạc cụ là 0,8 — gấp 5 lần gain cũ tại 100%; compressor vẫn hạn chế đỉnh âm. Bộ đếm ô nhịp/phách có tiếng click và âm lượng riêng. Nhịp kép 6/8, 9/8, 12/8 đếm theo phách đen chấm dôi. Bấm dừng để về đầu. Khuông nhạc và màu nốt đồng bộ cả bản sửa chưa lưu, nốt nối qua ô nhịp và khi tua/nghe lại.
 
-**Cài đặt** lưu tại trình duyệt: tự dò thông số sau upload, tự cuộn khi nghe, màu active notes, ngôn ngữ VI/EN và 10 font lời hát. Font chỉ áp dụng cho lời trên khuông nhạc và ô nhập lời; tên bè, tempo, hợp âm và số ô nhịp giữ nguyên. Chưa thay font trong file xuất. Chọn **Thiết bị xử lý → Auto / GPU · CUDA / CPU only** cho lần chạy SheetSage2 tiếp theo. Auto ưu tiên CUDA; GPU báo lỗi nếu CUDA không khả dụng; CPU only ẩn CUDA khỏi worker và dùng FP32. Dò audio và DSP luôn dùng CPU. Tác vụ đang chạy giữ lựa chọn lúc bắt đầu.
+**Cài đặt** lưu tại trình duyệt: tự dò thông số sau upload, tự cuộn khi nghe, màu active notes, ngôn ngữ VI/EN và 10 font lời hát. Font chỉ áp dụng cho lời trên khuông nhạc và ô nhập lời; tên bè, tempo, hợp âm và số ô nhịp giữ nguyên. PDF dùng font Noto Sans nhúng sẵn; lựa chọn font lời hát chỉ áp dụng cho phần xem/chỉnh lời. Chọn **Thiết bị xử lý → Auto / GPU · CUDA / CPU only** cho lần chạy SheetSage2 tiếp theo. Auto ưu tiên CUDA; GPU báo lỗi nếu CUDA không khả dụng; CPU only ẩn CUDA khỏi worker và dùng FP32. Dò audio và DSP luôn dùng CPU. Tác vụ đang chạy giữ lựa chọn lúc bắt đầu.
 
 Các khung audio gốc, dò audio, nghe giai điệu, bản nhạc và bốn khung thiết lập/xuất file có mũi tên nhỏ lên/xuống để thu gọn hoặc mở lại, giữ nguyên nội dung và trạng thái điều khiển. **Giúp đỡ** mở hướng dẫn 6 bước; popup cũng xuất hiện lần đầu.
 
@@ -112,7 +112,7 @@ output/                   Tài liệu nghiên cứu/kế hoạch ban đầu
 
 Audio được giữ nguyên; tệp inference và score chỉnh sửa lưu riêng. Mặc định API chỉ bind `127.0.0.1`; không mở cho LAN. Asset giao diện được bundle local. Tải model/phụ thuộc cần mạng lần đầu; inference và xử lý project dùng tài nguyên local đã cài.
 
-Biến môi trường tùy chọn: `SHEET_STUDIO_DATA` (thư mục project), `MUSESCORE_PATH` (đường dẫn MuseScore), `FFMPEG_PATH` (adapter audio), `SHEETSAGE2_PYTHON` (runtime model). Khi dùng FFmpeg ngoài PATH, vẫn cần `ffprobe` trên PATH để kiểm file upload.
+Biến môi trường tùy chọn: `SHEET_STUDIO_DATA` (thư mục project), `FFMPEG_PATH` (adapter audio), `SHEETSAGE2_PYTHON` (runtime model). Khi dùng FFmpeg ngoài PATH, vẫn cần `ffprobe` trên PATH để kiểm file upload.
 
 ## Phát triển và kiểm thử
 

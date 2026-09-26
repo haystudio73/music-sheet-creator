@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowLeft, ArrowRight, AudioLines, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, FileMusic, FolderOpen, HardDrive, LoaderCircle, Languages, MessageSquareText, Menu, Moon, Music2, Plus, RefreshCw, Save, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash, Trash2, Undo2, Upload, Wrench, X } from 'lucide-react';
-import { api, ApiError, errorMessage, getApiUrl, isActiveJob } from './api';
-import type { AnalyzeOptions, Artifact, ExportOptions, Health, Job, Project, ScoreDocument } from './types';
+import { ArrowDownToLine, ArrowLeft, ArrowRight, AudioLines, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, FileMusic, FolderOpen, HardDrive, LoaderCircle, Languages, MessageSquareText, Menu, Moon, Music2, Pencil, Plus, RefreshCw, Save, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash, Trash2, Undo2, Upload, Wrench, X } from 'lucide-react';
+import { api, ApiError, errorMessage, getApiUrl, getClientSession, isActiveJob } from './api';
+import type { AnalyzeOptions, Artifact, PdfExportSource, ExportOptions, Health, Job, Project, ScoreDocument } from './types';
 import CollapsibleSection from './CollapsibleSection';
 import AudioPlayer, { timeLabel } from './AudioPlayer';
 import ScorePreview from './ScorePreview';
@@ -71,6 +71,16 @@ export default function App() {
     const [analysisMode, setAnalysisMode] = useState(false);
     const [trashOpen, setTrashOpen] = useState(false);
     const [deletedProjects, setDeletedProjects] = useState<Project[]>([]);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [titleDraft, setTitleDraft] = useState('');
+    const titleInputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if (isEditingTitle && titleInputRef.current) {
+            titleInputRef.current.focus();
+            titleInputRef.current.select();
+        }
+    }, [isEditingTitle]);
+
     const editingScore = analysisMode ? null : score;
     const dirty = Boolean(score && savedScore && JSON.stringify(score) !== JSON.stringify(savedScore));
     const activeJob = isActiveJob(job);
@@ -90,6 +100,9 @@ export default function App() {
         setNotice('');
         setPendingScore(null);
         setSidebarOpen(false);
+        setIsEditingTitle(false);
+        setTitleDraft('');
+
         try {
             const project = await api<Project>(`/projects/${id}`);
             const [document, detected] = await Promise.all([project.score_revision === null ? Promise.resolve(null) : api<ScoreDocument>(`/projects/${id}/score`), api<AudioAnalysis | null>(`/projects/${id}/audio-analysis`)]);
@@ -398,6 +411,85 @@ export default function App() {
         setUndoHistory(previous => [...previous.slice(-98), copy(score)]);
         setScore({ ...next, review_status: 'needs_review' });
     };
+    const startEditingTitle = () => {
+        if (disabled || !selected)
+            return;
+        setTitleDraft(displayedScore?.title || selected.title || '');
+        setIsEditingTitle(true);
+    };
+    const cancelEditingTitle = () => {
+        setIsEditingTitle(false);
+        setTitleDraft('');
+    };
+    const saveTitle = async (newTitle: string) => {
+        const trimmed = newTitle.trim();
+        if (!selected) {
+            cancelEditingTitle();
+            return;
+        }
+        if (!trimmed) {
+            setError(t("Tên bài hát cần từ 1 đến 200 ký tự."));
+            return;
+        }
+        if (trimmed.length > 200) {
+            setError(t("Tên bài hát cần từ 1 đến 200 ký tự."));
+            return;
+        }
+        const currentTitle = displayedScore?.title || selected.title;
+        if (trimmed === currentTitle) {
+            setIsEditingTitle(false);
+            return;
+        }
+        if (editingScore) {
+            if (dirty) {
+                changeScore({ ...editingScore, title: trimmed });
+                setIsEditingTitle(false);
+                setNotice(t("Đã đổi tên bài hát. Hãy bấm Lưu để lưu cùng các thay đổi khác."));
+                return;
+            }
+            setBusy('save');
+            setError('');
+            try {
+                const next = await api<ScoreDocument>(`/projects/${selected.id}/score`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ expected_revision: savedScore?.revision ?? editingScore.revision, score: { ...editingScore, title: trimmed } }),
+                });
+                setScore(next);
+                setSavedScore(copy(next));
+                setSelected(previous => previous ? { ...previous, title: next.title, score_revision: next.revision, status: next.review_status === 'reviewed' ? 'reviewed' : 'draft' } : previous);
+                await refreshProjects();
+                setIsEditingTitle(false);
+                setNotice(t("Đã đổi tên bài hát thành “{0}”.", { "0": next.title }));
+            }
+            catch (err) {
+                setError(errorMessage(err));
+            }
+            finally {
+                setBusy('');
+            }
+        }
+        else {
+            setBusy('title');
+            setError('');
+            try {
+                const updated = await api<Project>(`/projects/${selected.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ title: trimmed }),
+                });
+                setSelected(previous => previous ? { ...previous, title: updated.title } : previous);
+                await refreshProjects();
+                setIsEditingTitle(false);
+                setNotice(t("Đã đổi tên bài hát thành “{0}”.", { "0": updated.title }));
+            }
+            catch (err) {
+                setError(errorMessage(err));
+            }
+            finally {
+                setBusy('');
+            }
+        }
+    };
+
     const undoScore = useCallback(() => {
         if (disabled)
             return;
@@ -629,12 +721,18 @@ export default function App() {
                 bar_start: exportScope === 'range' ? Number(exportBarStart) : undefined,
                 bar_end: exportScope === 'range' ? Number(exportBarEnd || measureCount) : undefined,
             };
-            const artifact = await api<Artifact>(`/projects/${selected.id}/exports`, { method: 'POST', body: JSON.stringify(payload) });
-            // Tải tệp thông qua blob để kích hoạt download trực tiếp trên mọi trình duyệt
-            const res = await fetch(getApiUrl(artifact.url), { credentials: 'same-origin' });
+            const artifact = await api<Artifact | PdfExportSource>(`/projects/${selected.id}/exports`, { method: 'POST', body: JSON.stringify(payload) });
+            const source = 'source' in artifact ? artifact.source : artifact;
+            const session = getClientSession();
+            const res = await fetch(getApiUrl(source.url), {
+                credentials: 'same-origin',
+                headers: session ? { 'X-Client-Session': session } : {},
+            });
             if (!res.ok)
                 throw new Error(t("Không tải được tệp từ máy chủ ({0}).", { "0": res.status }));
-            const blob = await res.blob();
+            const blob = format === 'pdf'
+                ? await (await import('./exportPdf')).createScorePdf(await res.text())
+                : await res.blob();
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
@@ -715,7 +813,7 @@ export default function App() {
 
     {showSettings && <SettingsPanel close={() => setShowSettings(false)}/>}
     {showGuide && <Guide close={() => setShowGuide(false)}/>}
-    {showSystem && <section className="system-panel" aria-label={t("Thông tin hệ thống")}><div className="section-title"><h2>{t("Hệ thống local")}</h2><button className="icon-button" aria-label={t("Đóng thông tin hệ thống")} onClick={() => setShowSystem(false)}><X size={17}/></button></div><dl><div><dt>{t("API")}</dt><dd>{health ? t("Đang chạy · v{0}", { "0": health.version }) : t("Chưa kết nối")}</dd></div><div><dt>{t("GPU")}</dt><dd>{health?.gpu || t("Chưa phát hiện / CPU")}</dd></div><div><dt>{t("FFmpeg")}</dt><dd>{health?.ffmpeg ? t("Sẵn sàng") : t("Chưa cài")}</dd></div><div><dt>{t("MuseScore PDF")}</dt><dd>{health?.musescore ? t("Sẵn sàng") : t("Chưa cài")}</dd></div></dl><button className="button secondary compact" onClick={() => void initialize()} disabled={initialLoading}><RefreshCw size={14}/>{t("Kiểm tra lại")}</button></section>}
+    {showSystem && <section className="system-panel" aria-label={t("Thông tin hệ thống")}><div className="section-title"><h2>{t("Hệ thống local")}</h2><button className="icon-button" aria-label={t("Đóng thông tin hệ thống")} onClick={() => setShowSystem(false)}><X size={17}/></button></div><dl><div><dt>{t("API")}</dt><dd>{health ? t("Đang chạy · v{0}", { "0": health.version }) : t("Chưa kết nối")}</dd></div><div><dt>{t("GPU")}</dt><dd>{health?.gpu || t("Chưa phát hiện / CPU")}</dd></div><div><dt>{t("FFmpeg")}</dt><dd>{health?.ffmpeg ? t("Sẵn sàng") : t("Chưa cài")}</dd></div><div><dt>{t("Xuất PDF")}</dt><dd>{t("Trực tiếp trong trình duyệt")}</dd></div></dl><button className="button secondary compact" onClick={() => void initialize()} disabled={initialLoading}><RefreshCw size={14}/>{t("Kiểm tra lại")}</button></section>}
 
     <div className="workspace-grid">
       {sidebarOpen && <button className="sidebar-backdrop" aria-label={t("Đóng danh sách dự án")} onClick={() => setSidebarOpen(false)}/>}
@@ -747,7 +845,7 @@ export default function App() {
             void upload(e.dataTransfer.files[0]); }}><div className="upload-symbol">{busy === 'upload' ? <LoaderCircle className="spin" size={30} strokeWidth={1.4}/> : <Upload size={30} strokeWidth={1.4}/>}</div><h2>{busy === 'upload' ? t("Đang nhập audio…") : t("Kéo bản thu của bạn vào đây")}</h2><p>{t("WAV, MP3 hoặc FLAC · Tối đa 200 MB / 10 phút")}</p><button className="button primary" onClick={() => input.current?.click()} disabled={Boolean(busy) || !health}>{t("Chọn tệp từ máy")}<ArrowRight size={17}/></button></div>
           <div className="workflow-steps"><div><span>01</span><h3>{t("Nhập bản thu")}</h3><p>{t("Chọn audio có giai điệu chính nghe rõ.")}</p></div><div><span>02</span><h3>{t("Nghe & chỉnh sửa")}</h3><p>{t("Kiểm tra cao độ, trường độ và hợp âm.")}</p></div><div><span>03</span><h3>{t("Xuất bản nhạc")}</h3><p>{t("MusicXML để sửa tiếp, MIDI để nghe, PDF để in.")}</p></div></div>
         </> : <>
-          <div className="project-heading"><div><div className="eyebrow">{t("Lead sheet ")}<span className="thin-divider"/> {displayedScore ? t("Phiên bản {0}", { "0": displayedScore.revision }) : t("Bản thu mới")}</div><h1>{displayedScore?.title || selected.title}</h1><div className="project-meta"><span className={`review-badge ${displayedScore?.review_status === 'reviewed' ? 'reviewed' : ''}`}>{displayedScore?.review_status === 'reviewed' ? <Check size={12}/> : <span className="status-dot"/>}{displayedScore ? (displayedScore.review_status === 'reviewed' ? t("Đã kiểm tra") : t("Cần kiểm tra")) : t(statusNames[selected.status])}</span><span>{timeLabel(selected.duration)}{t(" audio")}</span>{displayedScore && <span>{displayedScore.notes.length}{t(" nốt · ")}{displayedScore.harmonies.length}{t(" hợp âm")}</span>}</div></div>{displayedScore && <div className="measure-folio"><span>{String(measureCount).padStart(2, '0')}</span><small>{t("ô nhịp")}</small></div>}</div>
+          <div className="project-heading"><div className="project-heading-main"><div className="eyebrow">{t("Lead sheet ")}<span className="thin-divider"/> {displayedScore ? t("Phiên bản {0}", { "0": displayedScore.revision }) : t("Bản thu mới")}</div>{isEditingTitle ? <form className="title-edit-form" onSubmit={e => { e.preventDefault(); void saveTitle(titleDraft); }}><input ref={titleInputRef} type="text" className="title-edit-input" value={titleDraft} maxLength={200} aria-label={t("Tên bài hát")} disabled={Boolean(busy)} onChange={e => setTitleDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') cancelEditingTitle(); }}/><div className="title-edit-actions"><button type="submit" className="button primary compact" disabled={!titleDraft.trim() || Boolean(busy)}>{busy === 'save' || busy === 'title' ? <LoaderCircle className="spin" size={13}/> : <Check size={13}/>}<span>{t("Lưu")}</span></button><button type="button" className="button secondary compact" disabled={Boolean(busy)} onClick={cancelEditingTitle}><X size={13}/><span>{t("Hủy")}</span></button></div></form> : <div className="title-display-row"><h1 className="editable-title" onClick={startEditingTitle} title={t("Bấm để đổi tên bài hát")} tabIndex={0} role="button" onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditingTitle(); } }}>{displayedScore?.title || selected.title}</h1><button type="button" className="icon-button edit-title-btn" aria-label={t("Đổi tên bài hát")} title={t("Đổi tên bài hát")} disabled={disabled} onClick={startEditingTitle}><Pencil size={18}/></button></div>}<div className="project-meta"><span className={`review-badge ${displayedScore?.review_status === 'reviewed' ? 'reviewed' : ''}`}>{displayedScore?.review_status === 'reviewed' ? <Check size={12}/> : <span className="status-dot"/>}{displayedScore ? (displayedScore.review_status === 'reviewed' ? t("Đã kiểm tra") : t("Cần kiểm tra")) : t(statusNames[selected.status])}</span><span>{timeLabel(selected.duration)}{t(" audio")}</span>{displayedScore && <span>{displayedScore.notes.length}{t(" nốt · ")}{displayedScore.harmonies.length}{t(" hợp âm")}</span>}</div></div>{displayedScore && <div className="measure-folio"><span>{String(measureCount).padStart(2, '0')}</span><small>{t("ô nhịp")}</small></div>}</div>
           {selected.pending_score_revision && <div className="pending-banner"><div><FileMusic size={19}/><span>{pendingScore ? t("Đang xem bản phân tích mới · phiên bản {0}", { "0": pendingScore.revision }) : t("Có bản phân tích mới · phiên bản {0}", { "0": selected.pending_score_revision })}<small>{t("Bản đang chỉnh sửa được giữ lại trong lịch sử.")}</small></span></div><div>{pendingScore ? <><button className="button secondary compact" disabled={Boolean(busy)} onClick={() => setPendingScore(null)}><ArrowLeft size={13}/>{t("Quay lại")}</button><button className="button primary compact" disabled={Boolean(busy)} onClick={() => void activatePending()}>{t("Dùng bản này")}</button></> : <button className="button secondary compact" disabled={Boolean(busy)} onClick={() => void viewPending()}>{t("Mở xem")}<ArrowRight size={14}/></button>}</div></div>}
           <CollapsibleSection storageKey="audio-original" title={<h2>{t("Audio gốc")}</h2>} className="workspace-section"><AudioPlayer projectId={selected.id} duration={selected.duration} filename={selected.audio_name}/></CollapsibleSection>
           <CollapsibleSection storageKey="audio-analysis" title={<h2>{t("Dò thông số audio")}</h2>} className="workspace-section"><AudioAnalysisPanel result={audioAnalysis} busy={busy === 'detect-audio'} disabled={disabled || dirty} analyze={() => void detectAudio()}/></CollapsibleSection>
@@ -769,7 +867,11 @@ export default function App() {
         <CollapsibleSection storageKey="inspector-engine" className="inspector-section" title={<div className="section-title"><h3>{t("Công cụ phân tích")}</h3><Settings2 size={14}/></div>}><label className="field-label" htmlFor="engine">{t("Model / bộ phân tích")}</label><select id="engine" value={options.engine} disabled={Boolean(busy) || activeJob} onChange={e => setOptions({ ...options, engine: e.target.value })}>{(health?.models.length ? health.models : [{ id: 'sheetsage2', name: 'SheetSage2', available: false }]).map(model => <option key={model.id} value={model.id}>{t(model.name)}{model.available ? '' : t(" · Chưa sẵn sàng")}</option>)}</select><div className={`engine-status ${engine?.available ? 'ready' : ''}`}><span className="status-dot"/><span>{engine?.available ? t("Sẵn sàng trên máy") : t("Chưa sẵn sàng")}</span></div><p className="field-help">{engine?.id === 'monophonic' ? t("Thử nghiệm DSP cho một nhạc cụ chơi từng nốt. Không phải AI; không chép đúng bản hòa âm nhiều nhạc cụ.") : (engine?.description ? t(engine.description) : '') || t("Tải và cấu hình model local trước khi phân tích bản hòa âm.")}</p>{engine?.reason && <p className="engine-reason">{t(engine.reason)}</p>}{!health && <button className="button secondary compact" onClick={() => void initialize()} disabled={initialLoading}><RefreshCw size={13}/>{t("Kết nối lại")}</button>}</CollapsibleSection>
         <CollapsibleSection storageKey="inspector-music-setup" className="inspector-section" title={<div className="section-title"><h3>{editingScore ? t("Thiết lập bản nhạc") : t("Thiết lập âm nhạc")}</h3><span className="section-index">01</span></div>}>
           {!editingScore && <label className="auto-analyze-field" title={t("Tự dò thông số audio sau khi upload")}><input type="checkbox" checked={autoAnalyze} onChange={e => toggleAutoAnalyze(e.target.checked)}/><span className="auto-analyze-badge">{t("AUTO")}</span><span>{t("Tự dò thông số audio sau khi upload")}</span></label>}
-          {editingScore && <label className="field">{t("Tên bản nhạc")}<input value={editingScore.title} disabled={disabled} onChange={e => changeScore({ ...editingScore, title: e.target.value })}/></label>}
+          {editingScore ? (
+            <label className="field">{t("Tên bài hát")}<input value={editingScore.title} maxLength={200} disabled={disabled} onChange={e => changeScore({ ...editingScore, title: e.target.value })}/></label>
+          ) : selected ? (
+            <label className="field">{t("Tên bài hát")}<div className="title-inspector-row"><input value={titleDraft !== '' ? titleDraft : selected.title} maxLength={200} disabled={disabled || Boolean(busy)} onChange={e => setTitleDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void saveTitle(titleDraft !== '' ? titleDraft : selected.title); } }}/><button className="button secondary compact" disabled={disabled || Boolean(busy) || !titleDraft.trim() || titleDraft.trim() === selected.title} onClick={() => void saveTitle(titleDraft)}>{busy === 'title' ? <LoaderCircle className="spin" size={12}/> : <Check size={12}/>}{t("Lưu")}</button></div></label>
+          ) : null}
           <div className="field-pair"><label className="field">{t("Tempo (BPM)")}<input type="number" min="20" max="300" value={editingScore?.tempo ?? options.tempo} disabled={disabled} onChange={e => editingScore ? changeScore({ ...editingScore, tempo: Number(e.target.value) }) : setOptions({ ...options, tempo: Number(e.target.value) })}/></label><label className="field">{t("Nhịp")}<select value={(editingScore?.meter || options.meter).join('/')} disabled={disabled} onChange={e => { const meter = e.target.value.split('/').map(Number) as [
         number,
         number
@@ -783,7 +885,7 @@ export default function App() {
         setOptions({ ...options, melody_role }); }}><option value="instrumental">{t("Nhạc cụ")}</option><option value="vocal">{t("Giọng hát")}</option></select></label><p className="field-help">{t("Phiên bản đầu dùng tempo và nhịp cố định. ")}{editingScore ? t("Đổi tên giọng không đổi cao độ; dùng Chuyển giọng bên dưới.") : t("Chưa tự động xử lý rubato hoặc thay đổi nhịp.")}</p>
           <button className="button primary full-width" disabled={!selected || !engine?.available || Boolean(busy) || activeJob || dirty || Boolean(pendingScore)} onClick={() => score && !analysisMode ? enterAnalysis() : void analyze()}>{busy === 'analyze' ? <LoaderCircle className="spin" size={16}/> : <AudioLines size={16}/>}{score && !analysisMode ? t("Quay lại bước 2") : score ? t("Phân tích lại audio") : t("Bắt đầu phân tích")}<ArrowRight size={16}/></button>{editingScore && <p className="field-help">{t("Phân tích lại tạo bản nháp mới để bạn lựa chọn.")}</p>}
         </CollapsibleSection>
-        {score && !analysisMode && <><CollapsibleSection storageKey="inspector-transpose" className="inspector-section" title={<div className="section-title"><h3>{t("Chuyển giọng")}</h3><span className="section-index">02</span></div>}><div className="transpose-row"><select aria-label={t("Số bán âm cần chuyển")} value={semitones} disabled={disabled || dirty} onChange={e => setSemitones(Number(e.target.value))}>{Array.from({ length: 25 }, (_, i) => i - 12).map(value => <option key={value} value={value}>{value > 0 ? '+' : ''}{value}{t(" bán âm")}{value === 0 ? t(" — giữ nguyên") : ''}</option>)}</select><button className="button secondary compact" disabled={disabled || dirty || semitones === 0} onClick={() => void transpose()}>{t("Áp dụng")}</button></div><p className="field-help">{t("Đổi đồng thời nốt, giọng và hợp âm. Tạo phiên bản mới.")}</p></CollapsibleSection><CollapsibleSection storageKey="inspector-export" className="inspector-section" title={<div className="section-title"><h3 id="download-panel">{t("Kiểm tra → Xuất file")}</h3><span className="section-index">03</span></div>}><p className="field-help export-intro">{t("Nghe đối chiếu với bản thu, kiểm tra ô nhịp và hợp âm trước khi dùng.")}</p><button className={`button ${score.review_status === 'reviewed' ? 'secondary' : 'primary'} full-width review-button`} disabled={disabled || dirty || score.review_status === 'reviewed'} onClick={() => void saveScore(true)}><CheckCircle2 size={16}/>{score.review_status === 'reviewed' ? t("Đã kiểm tra bản nhạc") : t("Xác nhận đã kiểm tra")}</button>{dirty && <p className="field-help">{t("Lưu thay đổi trước khi xuất hoặc chuyển giọng.")}</p>}{savedScore?.review_status !== 'reviewed' && <p className="export-locked">{t("Xác nhận đã kiểm tra để mở tải xuống.")}</p>}{activeJob && <p className="export-locked" role="status">{t("Đang phân tích — chưa thể tải file.")}</p>}<div className="export-options"><label className="field">{t("Phạm vi xuất")}<select value={exportScope} onChange={e => setExportScope(e.target.value as 'full' | 'range')}><option value="full">{t("Toàn bộ bài hát (")}{measureCount}{t(" ô nhịp)")}</option><option value="range">{t("Trích đoạn theo ô nhịp")}</option></select></label>{exportScope === 'range' && <div className="field-pair"><label className="field">{t("Từ ô nhịp")}<input type="number" min="1" max={measureCount || 1} value={exportBarStart} onChange={e => setExportBarStart(e.target.value)}/></label><label className="field">{t("Đến ô nhịp")}<input type="number" min="1" max={measureCount || 1} placeholder={String(measureCount || 1)} value={exportBarEnd} onChange={e => setExportBarEnd(e.target.value)}/></label></div>}<div className="export-checkbox-group"><label className="checkbox-field"><input type="checkbox" checked={includeChords} onChange={e => setIncludeChords(e.target.checked)}/>{t("Kèm ký hiệu hợp âm")}</label><label className="checkbox-field"><input type="checkbox" checked={includeLyrics} onChange={e => setIncludeLyrics(e.target.checked)}/>{t("Kèm lời bài hát (nếu có)")}</label><label className="checkbox-field"><input type="checkbox" checked={accompaniment} onChange={e => setAccompaniment(e.target.checked)}/>{t("Thêm hợp âm đệm vào MIDI")}</label></div></div><div className="export-list">{([['musicxml', 'MusicXML', t("Sửa tiếp trong phần mềm ký âm")], ['midi', 'MIDI', t("Nghe lại hoặc mở trong DAW")], ['pdf', 'PDF', health?.musescore ? t("Bản in từ MuseScore") : t("Cần cài MuseScore để xuất PDF")], ['abc', 'score.abc', t("File ABC notation 2.1, tiêu chuẩn text")]] as const).map(([format, label, description]) => <button key={format} disabled={disabled || dirty || savedScore?.review_status !== 'reviewed' || (format === 'pdf' && !health?.musescore)} onClick={() => void download(format)}><div><strong>{label}</strong><small>{t(description)}</small></div>{busy === format ? <LoaderCircle className="spin" size={17}/> : <ArrowDownToLine size={17}/>}</button>)}</div></CollapsibleSection></>}
+        {score && !analysisMode && <><CollapsibleSection storageKey="inspector-transpose" className="inspector-section" title={<div className="section-title"><h3>{t("Chuyển giọng")}</h3><span className="section-index">02</span></div>}><div className="transpose-row"><select aria-label={t("Số bán âm cần chuyển")} value={semitones} disabled={disabled || dirty} onChange={e => setSemitones(Number(e.target.value))}>{Array.from({ length: 25 }, (_, i) => i - 12).map(value => <option key={value} value={value}>{value > 0 ? '+' : ''}{value}{t(" bán âm")}{value === 0 ? t(" — giữ nguyên") : ''}</option>)}</select><button className="button secondary compact" disabled={disabled || dirty || semitones === 0} onClick={() => void transpose()}>{t("Áp dụng")}</button></div><p className="field-help">{t("Đổi đồng thời nốt, giọng và hợp âm. Tạo phiên bản mới.")}</p></CollapsibleSection><CollapsibleSection storageKey="inspector-export" className="inspector-section" title={<div className="section-title"><h3 id="download-panel">{t("Kiểm tra → Xuất file")}</h3><span className="section-index">03</span></div>}><p className="field-help export-intro">{t("Nghe đối chiếu với bản thu, kiểm tra ô nhịp và hợp âm trước khi dùng.")}</p><button className={`button ${score.review_status === 'reviewed' ? 'secondary' : 'primary'} full-width review-button`} disabled={disabled || dirty || score.review_status === 'reviewed'} onClick={() => void saveScore(true)}><CheckCircle2 size={16}/>{score.review_status === 'reviewed' ? t("Đã kiểm tra bản nhạc") : t("Xác nhận đã kiểm tra")}</button>{dirty && <p className="field-help">{t("Lưu thay đổi trước khi xuất hoặc chuyển giọng.")}</p>}{savedScore?.review_status !== 'reviewed' && <p className="export-locked">{t("Xác nhận đã kiểm tra để mở tải xuống.")}</p>}{activeJob && <p className="export-locked" role="status">{t("Đang phân tích — chưa thể tải file.")}</p>}<div className="export-options"><label className="field">{t("Phạm vi xuất")}<select value={exportScope} onChange={e => setExportScope(e.target.value as 'full' | 'range')}><option value="full">{t("Toàn bộ bài hát (")}{measureCount}{t(" ô nhịp)")}</option><option value="range">{t("Trích đoạn theo ô nhịp")}</option></select></label>{exportScope === 'range' && <div className="field-pair"><label className="field">{t("Từ ô nhịp")}<input type="number" min="1" max={measureCount || 1} value={exportBarStart} onChange={e => setExportBarStart(e.target.value)}/></label><label className="field">{t("Đến ô nhịp")}<input type="number" min="1" max={measureCount || 1} placeholder={String(measureCount || 1)} value={exportBarEnd} onChange={e => setExportBarEnd(e.target.value)}/></label></div>}<div className="export-checkbox-group"><label className="checkbox-field"><input type="checkbox" checked={includeChords} onChange={e => setIncludeChords(e.target.checked)}/>{t("Kèm ký hiệu hợp âm")}</label><label className="checkbox-field"><input type="checkbox" checked={includeLyrics} onChange={e => setIncludeLyrics(e.target.checked)}/>{t("Kèm lời bài hát (nếu có)")}</label><label className="checkbox-field"><input type="checkbox" checked={accompaniment} onChange={e => setAccompaniment(e.target.checked)}/>{t("Thêm hợp âm đệm vào MIDI")}</label></div></div><div className="export-list">{([['musicxml', 'MusicXML', t("Sửa tiếp trong phần mềm ký âm")], ['midi', 'MIDI', t("Nghe lại hoặc mở trong DAW")], ['pdf', 'PDF', t("Bản in A4 trực tiếp từ trình duyệt")], ['abc', 'score.abc', t("File ABC notation 2.1, tiêu chuẩn text")]] as const).map(([format, label, description]) => <button key={format} disabled={disabled || dirty || savedScore?.review_status !== 'reviewed'} onClick={() => void download(format)}><div><strong>{label}</strong><small>{t(description)}</small></div>{busy === format ? <LoaderCircle className="spin" size={17}/> : <ArrowDownToLine size={17}/>}</button>)}</div></CollapsibleSection></>}
         {score && !analysisMode && <CollapsibleSection storageKey="inspector-history" className="inspector-section activity-history" title={<div className="section-title"><h3>{t("Lịch sử kiểm tra & xuất file")}</h3><span className="count">{activityHistory.length}/10</span></div>}>{activityHistory.length ? <ol>{activityHistory.map(item => <li key={item.id}><strong>{item.kind === 'review' ? t("Đã kiểm tra bản nhạc") : t("Đã xuất {0}", { "0": item.outputFilename || item.format || '' })}</strong><span>{item.projectTitle} · {item.audioName} · r{item.revision}</span><small>{new Date(item.createdAt).toLocaleString(settings.language === 'en' ? 'en-US' : 'vi-VN')}</small></li>)}</ol> : <p className="field-help">{t("Chưa có kết quả kiểm tra hoặc tệp đã xuất trên trình duyệt này.")}</p>}</CollapsibleSection>}
         <div className="inspector-note"><FileMusic size={18}/><p><strong>{t("Lead sheet")}</strong>{t(" gồm một dòng giai điệu và ký hiệu hợp âm. Chép bè riêng cho từng nhạc cụ sẽ được mở rộng sau.")}</p></div>
       </aside>

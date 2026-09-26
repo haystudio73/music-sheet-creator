@@ -167,3 +167,8 @@ class ExportRequest(StrictModel):
     bar_start: int | None = Field(default=None, ge=1)
     bar_end: int | None = Field(default=None, ge=1)
     custom_title: str | None = Field(default=None, max_length=200)
+
+
+class UpdateProjectRequest(StrictModel):
+    title: str = Field(min_length=1, max_length=200)
+

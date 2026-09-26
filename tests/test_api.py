@@ -217,3 +217,33 @@ def test_preview_handles_overlaps_and_fix_overlaps_endpoint(client, tmp_path):
     assert fixed_score["revision"] == rev + 1
     assert not any("chồng lấn" in d for d in fixed_score["diagnostics"])
 
+
+def test_update_project_title(client, tmp_path):
+    project = upload(client, tmp_path)
+    pid = project["id"]
+    assert project["title"] == "Thử nghiệm tổng hợp"
+
+    # Update title before score analysis
+    res = client.patch(f"/api/projects/{pid}", json={"title": "  Bình minh trên đồi  "})
+    assert res.status_code == 200
+    assert res.json()["title"] == "Bình minh trên đồi"
+    assert client.get(f"/api/projects/{pid}").json()["title"] == "Bình minh trên đồi"
+
+    # Validation: empty and too long
+    assert client.patch(f"/api/projects/{pid}", json={"title": "   "}).status_code == 422
+    assert client.patch(f"/api/projects/{pid}", json={"title": "A" * 201}).status_code == 422
+
+    # Analyze to create score
+    analyze(client, pid)
+    score = client.get(f"/api/projects/{pid}/score").json()
+    assert score["title"] == "Bình minh trên đồi"
+
+    # Update title after score exists
+    res_after = client.patch(f"/api/projects/{pid}", json={"title": "Hoàng hôn buông xuống"})
+    assert res_after.status_code == 200
+    assert res_after.json()["title"] == "Hoàng hôn buông xuống"
+    updated_score = client.get(f"/api/projects/{pid}/score").json()
+    assert updated_score["title"] == "Hoàng hôn buông xuống"
+    assert updated_score["revision"] > score["revision"]
+
+

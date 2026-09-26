@@ -2,15 +2,11 @@
 
 from copy import deepcopy
 from fractions import Fraction
-from pathlib import Path
-from types import SimpleNamespace
-import os
-import subprocess
 import xml.etree.ElementTree as ET
 
 import pytest
 
-from backend.notation import export_abc, export_midi, export_musicxml, export_pdf, transpose_score, validate_score
+from backend.notation import export_abc, export_midi, export_musicxml, transpose_score, validate_score
 
 
 @pytest.fixture
@@ -188,56 +184,6 @@ def test_compound_meter_bars_and_empty_melody_are_valid(score, tmp_path):
     divisions = int(xml.findtext(".//divisions"))
     assert sum(int(note.findtext("duration")) for note in xml.findall(".//note")) == 3 * divisions
     assert all(note.find("rest") is not None for note in xml.findall(".//note"))
-
-
-def test_pdf_subprocess_failure_preserves_error_and_existing_destination(score, tmp_path, monkeypatch):
-    executable = tmp_path / "MuseScore4.exe"
-    executable.touch()
-    destination = tmp_path / "existing.pdf"
-    destination.write_bytes(b"existing-file")
-    calls = []
-
-    def fail(command, **options):
-        calls.append((command, options))
-        return SimpleNamespace(returncode=2, stdout="", stderr="engraving failed: deliberate test")
-
-    monkeypatch.setattr(subprocess, "run", fail)
-    with pytest.raises(RuntimeError, match="engraving failed: deliberate test"):
-        export_pdf(score, destination, str(executable))
-    assert destination.read_bytes() == b"existing-file"
-    assert calls[0][0][1] == "-o"
-    assert calls[0][1]["timeout"] == 120
-    assert "shell" not in calls[0][1]
-    if os.name == "nt":
-        assert calls[0][1]["creationflags"] & subprocess.CREATE_NO_WINDOW
-
-
-def test_pdf_timeout_is_explicit(score, tmp_path, monkeypatch):
-    executable = tmp_path / "MuseScore4.exe"
-    executable.touch()
-
-    def timeout(command, **options):
-        raise subprocess.TimeoutExpired(command, options["timeout"], stderr=b"waiting for renderer")
-
-    monkeypatch.setattr(subprocess, "run", timeout)
-    with pytest.raises(RuntimeError, match="120.*waiting for renderer"):
-        export_pdf(score, tmp_path / "timeout.pdf", str(executable))
-
-
-def test_pdf_success_copies_verified_pdf(score, tmp_path, monkeypatch):
-    executable = tmp_path / "MuseScore4.exe"
-    executable.touch()
-    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
-
-    def succeed(command, **options):
-        assert options["env"]["QT_QPA_PLATFORM"] == ("windows" if os.name == "nt" else "offscreen")
-        Path(command[2]).write_bytes(b"%PDF-1.4\nfixture")
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr(subprocess, "run", succeed)
-    destination = tmp_path / "result.pdf"
-    export_pdf(score, destination, str(executable))
-    assert destination.read_bytes().startswith(b"%PDF-")
 
 
 def _lyric(identity, note_id, text, **values):

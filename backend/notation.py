@@ -11,11 +11,7 @@ from copy import deepcopy
 from fractions import Fraction
 from math import isfinite, lcm
 from pathlib import Path
-import os
 import re
-import shutil
-import subprocess
-import tempfile
 import xml.etree.ElementTree as ET
 
 
@@ -874,50 +870,6 @@ def export_midi(score: dict, path: Path, accompaniment: bool = False, options: d
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     midi.save(path)
-
-
-def export_pdf(score: dict, path: Path, musescore_path: str | None = None, options: dict | None = None) -> None:
-    """Engrave with installed MuseScore, preserving errors and avoiding a GUI window."""
-    configured = musescore_path or os.environ.get("MUSESCORE_PATH")
-    executable = configured or shutil.which("MuseScore4") or shutil.which("mscore") or shutil.which("musescore")
-    if executable is None and os.name == "nt":
-        default = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "MuseScore 4/bin/MuseScore4.exe"
-        if default.is_file():
-            executable = str(default)
-    if not executable or not Path(executable).is_file():
-        raise RuntimeError("Không tìm thấy MuseScore. Cài MuseScore 4 hoặc đặt MUSESCORE_PATH để xuất PDF.")
-    destination = Path(path).resolve()
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="lead-sheet-pdf-") as temporary:
-        temporary_path = Path(temporary)
-        source = temporary_path / "score.musicxml"
-        result_path = temporary_path / "score.pdf"
-        export_musicxml(score, source, options=options)
-        environment = os.environ.copy()
-        environment.setdefault("QT_QPA_PLATFORM", "windows" if os.name == "nt" else "offscreen")
-        cmd_options: dict = {"capture_output": True, "text": True, "encoding": "utf-8", "errors": "replace", "timeout": 120, "env": environment}
-        if os.name == "nt":
-            cmd_options["creationflags"] = subprocess.CREATE_NO_WINDOW
-            startup = subprocess.STARTUPINFO()
-            startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startup.wShowWindow = subprocess.SW_HIDE
-            cmd_options["startupinfo"] = startup
-        try:
-            result = subprocess.run([str(executable), "-o", str(result_path), str(source)], **cmd_options)
-        except subprocess.TimeoutExpired as exc:
-            detail = exc.stderr or exc.stdout or ""
-            if isinstance(detail, bytes):
-                detail = detail.decode("utf-8", errors="replace")
-            raise RuntimeError(f"MuseScore quá thời gian chờ 120 giây. {detail[-2000:]}") from exc
-        except OSError as exc:
-            raise RuntimeError(f"Không chạy được MuseScore: {exc}") from exc
-        if result.returncode != 0 or not result_path.is_file():
-            detail = (result.stderr or result.stdout or "Không tạo được file PDF.")[-4000:]
-            raise RuntimeError(f"MuseScore xuất PDF thất bại (mã {result.returncode}): {detail}")
-        with result_path.open("rb") as handle:
-            if handle.read(5) != b"%PDF-":
-                raise RuntimeError("MuseScore không trả về file PDF hợp lệ.")
-        shutil.copyfile(result_path, destination)
 
 
 def transpose_score(score: dict, semitones: int) -> dict:

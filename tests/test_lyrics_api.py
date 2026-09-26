@@ -135,4 +135,54 @@ def test_active_analysis_blocks_review_and_download(lyrics_client):
     job = client.app.state.store.create_job("lyrics-test", {"engine": "test"})
     assert client.post("/api/projects/lyrics-test/review", json={"expected_revision": 1}).status_code == 409
     assert client.post("/api/projects/lyrics-test/exports", json={"revision": 1, "format": "midi"}).status_code == 409
+    assert client.post("/api/projects/lyrics-test/exports", json={"revision": 1, "format": "pdf"}).status_code == 409
     client.app.state.store.update_job(job["id"], "cancelled", "cancelled", "Test complete")
+
+
+@pytest.mark.parametrize("include_chords,include_lyrics", [(True, True), (False, False)])
+def test_browser_pdf_source_respects_options_and_needs_no_executable(lyrics_client, monkeypatch, include_chords, include_lyrics):
+    client = lyrics_client
+    score = client.get("/api/projects/lyrics-test/score").json()
+    score["lyrics"] = [dict(id=f"l{i}", note_id=f"n{i}", text=text, verse=1, syllabic="single",
+                            source_start=None, source_end=None) for i, text in [(0, "Nắng"), (4, "Đồi")]]
+    score["harmonies"] = [dict(id="h1", root="C", quality="major", bass=None, start="4", duration="4", kind="chord")]
+    saved = client.app.state.store.save_score("lyrics-test", score)
+
+    def no_subprocess(*args, **kwargs):
+        raise AssertionError("PDF preparation must not invoke an external renderer")
+
+    monkeypatch.setattr("subprocess.run", no_subprocess)
+    response = client.post("/api/projects/lyrics-test/exports", json={
+        "revision": saved["revision"], "format": "pdf", "scope": "range", "bar_start": 2, "bar_end": 2,
+        "include_chords": include_chords, "include_lyrics": include_lyrics, "custom_title": "Trích đoạn tiếng Việt",
+    })
+    assert response.status_code == 201, response.text
+    result = response.json()
+    assert result["filename"] == f"lead-sheet-r{saved['revision']}.pdf"
+    assert result["source"]["filename"].endswith(".musicxml")
+    source = client.get(result["source"]["url"])
+    assert source.status_code == 200
+    xml = ET.fromstring(source.content)
+    assert "Trích đoạn tiếng Việt" in xml.findtext("work/work-title")
+    assert len(xml.findall(".//measure")) == 1
+    assert bool(xml.findall(".//harmony")) == include_chords
+    assert [lyric.text for lyric in xml.findall(".//lyric/text")] == (["Đồi"] if include_lyrics else [])
+
+    client.app.state.store.save_score("lyrics-test", {**saved, "review_status": "needs_review"})
+    assert client.get(result["source"]["url"]).status_code == 409
+
+
+def test_browser_pdf_rejects_invalid_range_and_overlap(lyrics_client):
+    client = lyrics_client
+    assert client.get("/api/health").json()["pdf_export"] == "browser"
+    response = client.post("/api/projects/lyrics-test/exports", json={
+        "revision": 1, "format": "pdf", "scope": "range", "bar_start": 0, "bar_end": 2,
+    })
+    assert response.status_code == 422
+    score = client.get("/api/projects/lyrics-test/score").json()
+    score["notes"][0]["duration"] = "2"
+    saved = client.app.state.store.save_score("lyrics-test", score)
+    response = client.post("/api/projects/lyrics-test/exports", json={"revision": saved["revision"], "format": "pdf"})
+    assert response.status_code == 422
+    assert "chồng lấn" in response.json()["detail"]
+    assert not list((client.app.state.store.root / "projects/lyrics-test/exports").rglob("*.musicxml"))

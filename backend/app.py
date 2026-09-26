@@ -22,7 +22,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from .schemas import (ActivateScoreRequest, AnalyzeRequest, ExportRequest,
-                      SaveScoreRequest, ScoreDocument, TransposeRequest, ReviewRequest, SaveEditorRequest)
+                      SaveScoreRequest, ScoreDocument, TransposeRequest, ReviewRequest, SaveEditorRequest,
+                      UpdateProjectRequest)
 from .storage import ConflictError, Store, atomic_json
 from .queue_manager import IpActiveSessionError, QueueBusyError, QueueManager
 
@@ -46,10 +47,6 @@ def executable(name, env_name=None, fallback=None):
     if fallback and Path(fallback).is_file():
         return fallback
     return None
-
-
-def musescore():
-    return executable("MuseScore4", "MUSESCORE_PATH", r"C:\Program Files\MuseScore 4\bin\MuseScore4.exe")
 
 
 def probe_audio(path):
@@ -186,7 +183,7 @@ def create_app(data_dir: Path | None = None):
     def health(request: Request):
         from .transcription import engine_status
         client_session = get_client_session(request) or secrets.token_hex(16)
-        response = JSONResponse({"status": "ok", "version": "0.1.0", "ffmpeg": bool(executable("ffmpeg")), "musescore": bool(musescore()), "gpu": app.state.gpu, "models": engine_status(), "client_session": client_session})
+        response = JSONResponse({"status": "ok", "version": "0.1.0", "ffmpeg": bool(executable("ffmpeg")), "pdf_export": "browser", "gpu": app.state.gpu, "models": engine_status(), "client_session": client_session})
         response.set_cookie("studio_session", token, httponly=True, samesite="strict", path="/")
         response.set_cookie("studio_client_session", client_session, httponly=False, samesite="lax", path="/")
         return response
@@ -229,6 +226,22 @@ def create_app(data_dir: Path | None = None):
 
     @app.get("/api/projects/{project_id}")
     def get_project(project_id: str):
+        return store.project(project_id)
+
+    @app.patch("/api/projects/{project_id}")
+    @app.put("/api/projects/{project_id}")
+    def update_project(project_id: str, body: UpdateProjectRequest):
+        title = body.title.strip()
+        if not title or len(title) > 200:
+            raise HTTPException(422, "Tên bài hát cần từ 1 đến 200 ký tự.")
+        with store.lock:
+            project = store.project(project_id)
+            if project["score_revision"] is not None:
+                score = store.score(project_id)
+                score["title"] = title
+                store.save_score(project_id, score, expected_revision=project["score_revision"])
+            else:
+                store.update_project_title(project_id, title)
         return store.project(project_id)
 
     @app.delete("/api/projects/{project_id}")
@@ -522,11 +535,13 @@ def create_app(data_dir: Path | None = None):
 
     @app.post("/api/projects/{project_id}/exports", status_code=201)
     def export(project_id: str, body: ExportRequest):
-        from .notation import export_abc, export_midi, export_musicxml, export_pdf
+        from .notation import export_abc, export_midi, export_musicxml
         score = downloadable_score(project_id, body.revision)
         directory = store.root / "projects" / project_id / "exports" / str(body.revision)
         directory.mkdir(parents=True, exist_ok=True)
-        extension = {"musicxml": "musicxml", "midi": "mid", "pdf": "pdf", "abc": "abc"}[body.format]
+        # PDF is engraved in the browser from an explicitly prepared MusicXML
+        # artifact. The source keeps the same revision/review/download gates.
+        extension = {"musicxml": "musicxml", "midi": "mid", "pdf": "musicxml", "abc": "abc"}[body.format]
         path = directory / f"{uuid.uuid4().hex}.{extension}"
         options = {
             "accompaniment": body.accompaniment,
@@ -538,20 +553,19 @@ def create_app(data_dir: Path | None = None):
             "custom_title": body.custom_title,
         }
         try:
-            if body.format == "musicxml":
+            if body.format in {"musicxml", "pdf"}:
                 export_musicxml(score, path, options=options)
             elif body.format == "midi":
                 export_midi(score, path, accompaniment=body.accompaniment, options=options)
             elif body.format == "abc":
                 export_abc(score, path, options=options)
-            else:
-                if not musescore():
-                    raise HTTPException(409, "Chưa tìm thấy MuseScore 4 để xuất PDF. MusicXML, MIDI và ABC vẫn dùng được.")
-                export_pdf(score, path, musescore_path=musescore(), options=options)
             if not path.is_file() or not path.stat().st_size:
                 raise RuntimeError("Công cụ xuất file không tạo được kết quả.")
             filename = "score.abc" if body.format == "abc" else f"lead-sheet-r{body.revision}.{extension}"
-            return store.add_artifact(project_id, body.revision, path, filename)
+            artifact = store.add_artifact(project_id, body.revision, path, filename)
+            if body.format == "pdf":
+                return {"filename": f"lead-sheet-r{body.revision}.pdf", "source": artifact}
+            return artifact
         except HTTPException:
             path.unlink(missing_ok=True)
             raise

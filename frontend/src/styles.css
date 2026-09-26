@@ -299,3 +299,71 @@
   display: inline-block;
 }
 
+/* Editable song title */
+.project-heading-main {
+  flex: 1;
+  min-width: 0;
+}
+.title-display-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 17px;
+  flex-wrap: wrap;
+}
+.title-display-row h1.editable-title {
+  margin: 0 !important;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  border-bottom: 1px dashed transparent;
+}
+.title-display-row h1.editable-title:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.edit-title-btn {
+  color: #90949f;
+  opacity: 0.75;
+  transition: opacity 0.15s, color 0.15s;
+}
+.title-display-row:hover .edit-title-btn {
+  opacity: 1;
+  color: var(--accent);
+}
+.title-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 17px;
+  flex-wrap: wrap;
+}
+.title-edit-input {
+  font-size: clamp(20px, 2.2vw, 32px);
+  font-weight: 500;
+  letter-spacing: -1px;
+  height: 48px;
+  padding: 6px 12px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--ink);
+  flex: 1;
+  min-width: 220px;
+  max-width: 600px;
+}
+.title-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.title-inspector-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+.title-inspector-row input {
+  margin-top: 0;
+  flex: 1;
+}
+
+

@@ -9,10 +9,10 @@ Tài liệu này hướng dẫn chi tiết cách triển khai giao diện Web c�
 Trước khi bắt đầu, cần hiểu rõ đặc tính kỹ thuật của hệ thống để triển khai đúng cách:
 
 1. **Frontend (Web UI)**:
-   - Viết bằng **React + TypeScript + Vite**, hiển thị khuông nhạc bằng OpenSheetMusicDisplay (OSMD) và Smoosic Editor.
+   - Viết bằng **React + TypeScript + Vite**, hiển thị khuông nhạc bằng OpenSheetMusicDisplay (OSMD) và Smoosic Editor. Xuất PDF bằng JavaScript ngay trong trình duyệt; không cần cài MuseScore ở backend.
    - **Hoàn toàn tương thích và cực kỳ tối ưu khi chạy trên Vercel** (Global Edge CDN, tự động SSL/HTTPS, CI/CD tự động khi push GitHub).
 
-2. **Backend (Python + AI Models + FFmpeg + MuseScore)**:
+2. **Backend (Python + AI Models + FFmpeg)**:
    - Dùng **FastAPI**, lưu trữ dữ liệu vào thư mục `data/` (SQLite, tệp audio gốc, lịch sử bản ghi, file xuất).
    - Mô hình AI **SheetSage2 & MERT-v2** có dung lượng file trọng số (weights) hơn **3–4 GB**, cần bộ nhớ RAM/VRAM và card GPU để suy luận.
    - Các tác vụ phân tích âm thanh kéo dài từ **30 giây đến vài phút**.

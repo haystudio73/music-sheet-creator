@@ -18,18 +18,19 @@ Backwards-compatible schema version1: `lyrics` defaults `[]`; tokens `{id,text,n
 
 ## Python adapter modules
 
-Notation functions (root imports): `validate_score(score:dict)->list[str]` diagnostic warnings, raises ValueError for invalid; `export_musicxml(score:dict,path:Path)->None`; `export_midi(score:dict,path:Path,accompaniment:bool=False)->None`; `export_pdf(score:dict,path:Path,musescore_path:str|None=None)->None` subprocess MuseScore with timeout/Windows hidden window; `transpose_score(score:dict,semitones:int)->dict`.
+Notation functions (root imports): `validate_score(score:dict)->list[str]` diagnostic warnings, raises ValueError for invalid; `export_musicxml(score:dict,path:Path)->None`; `export_midi(score:dict,path:Path,accompaniment:bool=False)->None`; `transpose_score(score:dict,semitones:int)->dict`.
 
 Transcription functions: `engine_status()->list[dict]` each `{id,name,available,description,reason}` (sheetsage2, monophonic); `transcribe(audio_path:Path,options:dict,work_dir:Path,progress:Callable[[str,str],None],cancelled:Callable[[],bool])->dict` ScoreDocument. Options `{engine,tempo:float,meter:[int,int],key:str,melody_role}`. Store raw output in work_dir. Real unavailable model raises descriptive error, never simulate. Optional actual DSP monophonic analyzer clearly labeled experimental, not AI or full-mix support. Model process cannot touch project revisions; root owns persistence.
 
 ## HTTP `/api`
 
-- `GET /health`: `{status:'ok',version,ffmpeg:bool,musescore:bool,gpu:str|null,models:EngineStatus[]}`.
+- `GET /health`: `{status:'ok',version,ffmpeg:bool,pdf_export:'browser',gpu:str|null,models:EngineStatus[]}`.
 - `GET /projects`: active `Project[]`; `?deleted=true` lists trash.
 - `DELETE /projects/{id}`: recoverable deletion,200 `{id,deleted:true}`; running/queued job409. Retains files and revisions in place; excludes project from normal reads and mutations.
 - `POST /projects/{id}/restore`: restores project from trash and returns Project. Both operations are idempotent for existing projects and require the local session cookie.
 - `POST /projects` multipart `file` and optional `title`: Project. WAV/MP3/FLAC, max200MB/10minutes.
 - `GET /projects/{id}`: Project.
+- `PATCH /projects/{id}` JSON `{title:str}`: cập nhật tên bài hát / dự án (1..200 ký tự); nếu đã có bản nhạc thì lưu phiên bản mới đồng bộ.
 - `GET /projects/{id}/audio`: FileResponse.
 - `POST /projects/{id}/analyze` JSON `{engine,tempo,meter,key,melody_role}`: Job.
 - `GET /jobs/{id}`: Job (poll every1second, stop terminal).
@@ -40,7 +41,7 @@ Transcription functions: `engine_status()->list[dict]` each `{id,name,available,
 - `POST /projects/{id}/transpose` JSON `{expected_revision,semitones}`: ScoreDocument.
 - `GET /projects/{id}/preview?revision=N`: inline MusicXML for in-app preview, allowed before review; does not create an export artifact.
 - `POST /projects/{id}/review` JSON `{expected_revision}`: validates saved score, creates reviewed revision; stale revision or active job409.
-- `POST /projects/{id}/exports` JSON `{format:'musicxml'|'midi'|'pdf',revision:int,accompaniment:bool}`: `{id,filename,url}` (synchronous export initially, process timeout). Requires current reviewed revision and no active analysis job, otherwise409.
+- `POST /projects/{id}/exports` JSON `{format:'musicxml'|'midi'|'pdf'|'abc',revision:int,accompaniment:bool,include_chords?:bool,include_lyrics?:bool,scope?:'full'|'range',bar_start?:int,bar_end?:int,custom_title?:str}`: `{id,filename,url}` for MusicXML/MIDI/ABC. PDF returns `{filename:'lead-sheet-rN.pdf',source:{id,filename,url}}`; source is MusicXML with the requested options. Frontend fetches this gated source and lazily loads OSMD + jsPDF + svg2pdf.js to create a vector A4 PDF with embedded local Noto Sans. PDF bytes are downloaded locally, not stored as a backend artifact. No external renderer executable. Requires current reviewed revision and no active analysis job, otherwise409.
 - `GET /artifacts/{id}`: download, with the same current-revision/review/job gate. Old artifact links are locked after score changes.
 
 `Project`: `{id,title,created_at,updated_at,audio_name,duration:float,status:'ready'|'analyzing'|'draft'|'reviewed'|'failed',score_revision:int|null,latest_job:Job|null}`.

@@ -1,5 +1,5 @@
 export interface EngineStatus { id: string; name: string; available: boolean; description: string; reason: string | null }
-export interface Health { status: string; version: string; ffmpeg: boolean; musescore: boolean; gpu: string | null; models: EngineStatus[] }
+export interface Health { status: string; version: string; ffmpeg: boolean; pdf_export: 'browser'; gpu: string | null; models: EngineStatus[] }
 export interface Note { id: string; pitch: number; start: string; duration: string; velocity: number; source_start: number | null; source_end: number | null }
 export interface Harmony { id: string; root: string; quality: string; bass: string | null; start: string; duration: string; kind: 'chord' | 'no_chord' | 'unknown' }
 export interface LyricToken { id: string; text: string; note_id: string | null; verse: number; syllabic: 'single' | 'begin' | 'middle' | 'end'; source_start: number | null; source_end: number | null }
@@ -10,6 +10,7 @@ export interface QueueStatus { max_workers: number; max_queue: number; max_activ
 export interface Project { id: string; title: string; created_at: string; updated_at: string; audio_name: string; duration: number; status: 'ready' | 'analyzing' | 'draft' | 'reviewed' | 'failed'; score_revision: number | null; pending_score_revision?: number | null; latest_job: Job | null; lyric_attachment?: LyricSource | null }
 export interface AnalyzeOptions { engine: string; tempo: number; meter: [number, number]; key: string; melody_role: 'instrumental' | 'vocal' }
 export interface Artifact { id: string; filename: string; url: string }
+export interface PdfExportSource { filename: string; source: Artifact }
 export interface ExportOptions {
   format: 'musicxml' | 'midi' | 'pdf' | 'abc';
   revision: number;

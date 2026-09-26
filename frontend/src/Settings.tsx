@@ -73,13 +73,14 @@ export function SettingsPanel({ close }: { close: () => void }) {
 }
 
 export const workflow = [
-  { title: 'Upload audio', icon: Upload, description: 'Chọn WAV, MP3 hoặc FLAC từ máy, tối đa 200 MB / 10 phút.' },
+  { title: 'Upload audio', icon: Upload, description: 'Chọn WAV, MP3 hoặc FLAC từ máy, tối đa 200 MB / 10 phút. Có thể bấm trực tiếp vào tiêu đề để đổi tên bài hát.' },
   { title: 'Dò thông số audio', icon: AudioLines, description: 'Bấm Analyze Audio để ước lượng tempo, giọng và nhịp. Kiểm tra và chỉnh thông số trước bước tiếp theo.' },
   { title: 'Phân tích bản nhạc', icon: Music2, description: 'Chọn bộ phân tích và giai điệu nhạc cụ hoặc giọng hát, rồi tạo bản nháp nốt và hợp âm.' },
   { title: 'Thêm lời (tùy chọn)', icon: MessageSquareText, description: 'Nhập SRT / LRC, kiểm tra vị trí lời. Có thể xóa lời, nhập lại hoặc bỏ qua bước này.' },
-  { title: 'Kiểm tra', icon: CheckCircle2, description: 'Nghe thử, tua, chỉnh âm lượng từ 0–100%, bật bộ đếm nhịp. Sửa nốt và lời, lưu rồi bấm Xác nhận đã kiểm tra.' },
-  { title: 'Tải xuống', icon: Download, description: 'Sau khi xác nhận, tải MusicXML, MIDI, PDF hoặc ABC. Chỉnh sửa tiếp sẽ yêu cầu kiểm tra lại.' },
+  { title: 'Kiểm tra', icon: CheckCircle2, description: 'Nghe thử, tua, chỉnh âm lượng từ 0–100%, bật bộ đếm nhịp. Sửa tên bài hát, nốt và lời, lưu rồi bấm Xác nhận đã kiểm tra.' },
+  { title: 'Tải xuống', icon: Download, description: 'Sau khi xác nhận, tải MusicXML, MIDI, PDF hoặc ABC. PDF vector A4 in trực tiếp từ trình duyệt, hỗ trợ trích đoạn ô nhịp và tùy chọn hợp âm/lời.' },
 ];
+
 export function Guide({ close }: { close: () => void }) {
   const [step, setStep] = useState(0);
   const { update } = useSettings();
