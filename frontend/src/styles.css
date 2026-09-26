@@ -397,7 +397,9 @@
   .measure-folio,
   .title-edit-actions,
   .edit-title-btn,
-  .workspace-section,
+  .project-actions,
+  .workspace-section:not(.score-sheet-section),
+  .score-sheet-section > .collapse-heading,
   .mobile-menu,
   .quick-note-editor,
   .settings-modal-backdrop,
@@ -428,6 +430,14 @@
     color: #000 !important;
     margin: 0 0 4px 0 !important;
     line-height: 1.2 !important;
+  }
+
+  .score-sheet-section {
+    display: block !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
 
   .score-content {
