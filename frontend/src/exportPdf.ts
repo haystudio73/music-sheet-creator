@@ -10,16 +10,21 @@ const PAGE_WIDTH_PX = 794;
 let fontPromise: Promise<ArrayBuffer> | undefined;
 
 async function fetchFont(): Promise<ArrayBuffer> {
-  let response = await fetch(`/fonts/${FONT_FILE}`).catch(() => null);
-  if (!response || !response.ok) {
-    response = await fetch(`./fonts/${FONT_FILE}`).catch(() => null);
+  const fontUrls = [`/fonts/${FONT_FILE}`, `./fonts/${FONT_FILE}`];
+  for (const url of fontUrls) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const bytes = await res.arrayBuffer();
+        const font = await new FontFace(FONT_FAMILY, bytes).load();
+        document.fonts.add(font);
+        return bytes;
+      }
+    } catch {
+      // Continue to fallback candidate URL
+    }
   }
-  if (!response || !response.ok) throw new Error(t('Không tải được font để xuất PDF. Vui lòng tải lại trang và thử lại.'));
-  const bytes = await response.arrayBuffer();
-  // Use the exact same font bytes for browser measurement and PDF embedding.
-  const font = await new FontFace(FONT_FAMILY, bytes).load();
-  document.fonts.add(font);
-  return bytes;
+  throw new Error(t('Không tải được font để xuất PDF. Vui lòng tải lại trang và thử lại.'));
 }
 
 function loadFont(): Promise<ArrayBuffer> {
