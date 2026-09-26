@@ -366,4 +366,107 @@
   flex: 1;
 }
 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .topbar,
+  .sidebar,
+  .sidebar-backdrop,
+  .inspector,
+  .audio-strip,
+  .workflow-stepper,
+  .breadcrumb,
+  .workspace-footer,
+  .score-toolbar,
+  .message,
+  .system-panel,
+  .preview-dirty,
+  .preview-overlap-warning,
+  .diagnostics,
+  .project-meta,
+  .measure-folio,
+  .title-edit-actions,
+  .edit-title-btn,
+  .workspace-section,
+  .mobile-menu,
+  .quick-note-editor,
+  .settings-modal-backdrop,
+  .guide-modal-backdrop {
+    display: none !important;
+  }
+
+  .app-shell,
+  .workspace-grid,
+  .main-workspace {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  .project-heading {
+    padding: 0 0 8px 0 !important;
+    margin: 0 !important;
+  }
+
+  .project-heading h1 {
+    font-size: 18pt !important;
+    color: #000 !important;
+    margin: 0 0 4px 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  .score-content {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .score-preview {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  .notation-container {
+    width: 100% !important;
+  }
+
+  .notation-container svg {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .notation-container svg:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .sheet-topline,
+  .sheet-footer {
+    color: #444 !important;
+    padding: 4px 0 !important;
+    font-size: 8pt !important;
+  }
+}
+
+
 

@@ -76,4 +76,11 @@ Mục tiêu: hoàn tất kiểm tra tải xuống PDF, kiểm tra bố cục, c�
   - API `PATCH /api/projects/{id}` cập nhật tên bài hát / dự án, tự động đồng bộ score revision khi có bản nhạc.
   - Kiểm thử backend `test_update_project_title` passed (148/148 passed).
   - TypeScript / Vite production build PASS.
+- [x] Tối ưu và hoàn thiện tính năng in / xuất PDF:
+  - Bổ sung nút In nhanh (icon Máy in) trên toolbar khuông nhạc, hỗ trợ `window.print()` / `Ctrl+P`.
+  - Bổ sung CSS `@media print` chuẩn A4 portrait: tự động ẩn toàn bộ UI chrome (sidebar, player, inspector), khuông nhạc đen trắng sắc nét, phân trang tự động.
+  - Gia cố `exportPdf.ts`: hỗ trợ đường dẫn dự phòng cho font Noto Sans, trích xuất kích thước SVG linh hoạt.
+  - Nâng thời gian giữ URL Blob lên 60 giây trong `App.tsx`, ngăn Chrome/Edge ngắt kết nối tải file.
+  - Thêm tooltip hướng dẫn trên các nút xuất file khi bị khóa (chưa review hoặc chưa lưu).
+
 

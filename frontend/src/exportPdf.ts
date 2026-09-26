@@ -10,7 +10,10 @@ const PAGE_WIDTH_PX = 794;
 let fontPromise: Promise<ArrayBuffer> | undefined;
 
 async function fetchFont(): Promise<ArrayBuffer> {
-  const response = await fetch(`/fonts/${FONT_FILE}`);
+  let response = await fetch(`/fonts/${FONT_FILE}`).catch(() => null);
+  if (!response || !response.ok) {
+    response = await fetch(`./fonts/${FONT_FILE}`).catch(() => null);
+  }
   if (!response.ok) throw new Error(t('Không tải được font để xuất PDF. Vui lòng tải lại trang và thử lại.'));
   const bytes = await response.arrayBuffer();
   // Use the exact same font bytes for browser measurement and PDF embedding.
@@ -86,8 +89,8 @@ export async function createScorePdf(musicxml: string): Promise<Blob> {
         text.setAttribute('font-family', FONT_FAMILY);
         text.style.fontFamily = FONT_FAMILY;
       });
-      const svgWidth = svg.viewBox.baseVal.width || svg.width.baseVal.value;
-      const svgHeight = svg.viewBox.baseVal.height || svg.height.baseVal.value;
+      const svgWidth = svg.viewBox?.baseVal?.width || svg.width?.baseVal?.value || parseFloat(svg.getAttribute('width') || '0');
+      const svgHeight = svg.viewBox?.baseVal?.height || svg.height?.baseVal?.value || parseFloat(svg.getAttribute('height') || '0');
       if (!(svgWidth > 0 && svgHeight > 0)) throw new Error(t('Không tạo được khuông nhạc để xuất PDF.'));
       const scale = Math.min(width / svgWidth, height / svgHeight);
       await pdf.svg(svg, { x: (width - svgWidth * scale) / 2, y: 0, width: svgWidth * scale, height: svgHeight * scale });
