@@ -1,21 +1,41 @@
-# Bản Nhạc Local
+# Ứng dụng "Bản Nhạc Local"
 
-Web UI Việt/Anh chạy tại **http://127.0.0.1:8765** trên Windows 11. Backend Python, frontend React/TypeScript, dữ liệu lưu tại máy.
+Web UI Việt/Anh chạy tại **http://127.0.0.1:8765** trên Windows 11
 
-Vòng làm việc: **upload → dò thông số audio → phân tích bản nhạc → lời hát (tùy chọn) → kiểm tra → tải xuống**.
+Quy trình: **Upload file âm thanh → Dò thông số audio: nhịp, tông → Phân tích bản nhạc → Nhậ và sừa lời hát (tùy chọn) → Kiểm tra → Tải xuống / In**.
 
-## Chạy trên máy hiện tại
+## Chạy trên PC Windows
+### Yêu cầu hệ thống:
+- Windows 11 Pro+
+- GPU nVidia VGA 4Gb+ (tùy chọn) để tăng tốc giải mã
+- Cài download thư viện FFmpeg (Windows): https://www.gyan.dev/ffmpeg/builds/
+```
+winget install "FFmpeg (Essentials Build)"
+```
 
-Mở **`Start.cmd`** trong thư mục dự án. Giữ cửa sổ chạy backend mở trong lúc sử dụng; `Ctrl+C` để dừng. Nếu trình duyệt không tự mở, truy cập http://127.0.0.1:8765.
+- Cài đặt ứng dụng từ github
+```
+git clone https://github.com/haystudio73/music-sheet-creator.git
+cd music-sheet-creator
+```
 
-Sau khi sửa source hoặc cài trên máy mới:
+- Thực thi ứng dụng:
+```
+Start.cmd
+```
+** Nhớ chạy trong thư mục dự án.Luôn Giữ cửa sổ chạy backend mở trong lúc sử dụng; `Ctrl+C` để dừng. , 
 
+- Nếu trình duyệt không tự mở thì bạn nhập địa chỉ: http://127.0.0.1:8765 trên trình duyệt Chrome, Edge, Safari ... để vào sử dụng app!
+
+** Nếu sửa source hoặc cài trên máy mới:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
 Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` trong PATH). `setup.ps1` tạo runtime Python 3.12 và cài đúng các phiên bản trong `requirements.lock`. Python của model dùng môi trường 3.11 riêng. Không cần Node.js khi chỉ chạy frontend đã build. PDF được tạo trực tiếp trong trình duyệt bằng JavaScript, không cần cài MuseScore.
+
+<img width="1538" height="873" alt="image" src="https://github.com/user-attachments/assets/155028f4-fabd-450e-bf1c-bda36b8d48d4" />
 
 ## ✨ Tính năng nổi bật & Cập nhật mới
 
@@ -24,20 +44,16 @@ Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` 
   - **Backend AI trên Google Colab**: Chạy toàn bộ backend FastAPI + model SheetSage2/MERT-v2 trên GPU NVIDIA T4 miễn phí, tự động kết nối qua Cloudflare Tunnel (`trycloudflare.com`). Xem chi tiết [Hướng dẫn Google Colab](docs/deploy-colab.md).
   - **Chế độ Network Mode an toàn**: Hỗ trợ biến môi trường `SHEET_STUDIO_NETWORK_MODE`, kiểm soát CORS, giới hạn số tác vụ đồng thời trên mỗi IP (`SHEET_STUDIO_MAX_ACTIVE_PER_IP`) và hàng đợi xử lý chống tràn VRAM.
 - 📄 **Xuất PDF Vector A4 & In ấn trực tiếp (Print)**:
-  - **PDF Vector chuẩn in ấn**: Tạo trực tiếp trong trình duyệt bằng OpenSheetMusicDisplay + jsPDF + svg2pdf.js, không cần MuseScore hay dịch vụ backend bên ngoài.
-  - **Nhúng font Noto Sans tiếng Việt**: Đảm bảo toàn bộ dấu thanh tiếng Việt và ký tự quốc tế hiển thị sắc nét, chuẩn xác.
+  - **PDF Vector chuẩn in ấn**: Tạo trực tiếp trong trình duyệt.
   - **Tùy biến xuất nâng cao**: Cho phép chọn trích xuất phạm vi ô nhịp (`Từ ô... Đến ô...`), bật/tắt hợp âm (chords) và lời bài hát (lyrics).
-  - **Nút In bản nhạc (Print)**: Tích hợp chế độ `@media print` chuyên dụng, tự động ẩn các thanh công cụ, tối ưu căn lề giấy A4 và khắc phục hoàn toàn lỗi trang trắng xem trước khi in.
+  - **Nút In bản nhạc (Print)**: Tích hợp chế độ chuyên dụng, tự động ẩn các thanh công cụ, tối ưu căn lề giấy A4 và khắc phục hoàn toàn lỗi trang trắng xem trước khi in.
 - ✏️ **Chỉnh sửa Tên Bài hát trực tiếp**:
   - Nhấp đúp hoặc bấm biểu tượng chỉnh sửa trên tiêu đề H1 và trong bảng Inspector để đổi tên bài hát.
   - Tự động đồng bộ tên mới vào cơ sở dữ liệu và file MusicXML thông qua API `PATCH /api/projects/{id}`.
 - 🎨 **Cải tiến Giao diện & Trải nghiệm (UI/UX)**:
   - Đường viền nổi bật (focus outlines) trực quan cho từng bước của quy trình: *1. Upload → 2. Phân tích → 3. Thêm lời → 4. Kiểm tra & Xuất*.
   - Nút **Dò thông số audio (Analyze Audio)** được làm nổi bật với sắc xanh hiện đại, dễ nhận biết.
-  - Tự động lưu trữ cài đặt API endpoint, cấu hình hiển thị và font chữ lời hát vào LocalStorage.
-- 🎼 **Trình soạn thảo nốt nhạc chuyên sâu (Smoosic Editor)**:
-  - Tích hợp sâu Smoosic 1.0.44 chạy hoàn toàn local; chỉnh sửa cao độ (phím A–G, `=`/`-`), trường độ, lời ca, ô nhịp; lưu lịch sử phiên bản (`v1.json`, `v2.json`...) an toàn và kiểm tra xung đột đa tab.
-
+  - Tự động lưu thông số trong Cài đặt .
 ---
 
 ## Hai bộ phân tích khác nhau
@@ -77,19 +93,7 @@ Khi nghe giai điệu dựng lại, kéo thanh vị trí để tua tới/lùi (c
 
 Các khung audio gốc, dò audio, nghe giai điệu, bản nhạc và bốn khung thiết lập/xuất file có mũi tên nhỏ lên/xuống để thu gọn hoặc mở lại, giữ nguyên nội dung và trạng thái điều khiển. **Giúp đỡ** mở hướng dẫn 6 bước; popup cũng xuất hiện lần đầu.
 
-### Editor MusicXML
-
-Sau **Xác nhận đã kiểm tra**, bấm **Mở Editor** trong khung **Kiểm tra → Xuất file**. Trang Editor dùng [Smoosic 1.0.44](https://github.com/Smoosic/Smoosic) được đóng gói local và tự mở MusicXML của đúng dự án/phiên bản hiện tại. Chọn nốt rồi dùng A–G để đặt cao độ, `=`/`-` để chuyển cao độ, dấu phẩy/chấm để giảm/tăng trường độ; các menu hỗ trợ lời, ô nhịp và bố cục. Nghe thử dùng mẫu piano local cho mọi nhạc cụ.
-
-**Lưu vào dự án** giữ nguyên MusicXML đầy đủ trong `data/projects/{id}/editor/{source_revision}/`, có lịch sử `v1.json`, `v2.json`… và kiểm tra xung đột khi có nhiều cửa sổ. Mở lại sẽ nạp bản Editor đã lưu. **Tải MusicXML** xuất nội dung đang chỉnh. Bản Editor là bản MusicXML riêng: không ghi đè mô hình phiên âm một bè, preview và các file MIDI/PDF/ABC của màn hình chính. Nếu nguồn được sửa/phân tích lại, hãy kiểm tra nguồn mới rồi mở Editor mới; các bản Editor cũ vẫn được giữ trên đĩa. Thông báo rời trang giúp tránh mất thay đổi chưa lưu.
-
-`npm run dev` và `npm run build` tự chuẩn bị JS/CSS/font Smoosic từ dependency đã ghim; không cần CDN để mở/chỉnh sửa/nghe thử. Menu Library của Smoosic là thư viện bên ngoài. Lưu ý khả năng chuyển đổi MusicXML phụ thuộc Smoosic; nên kiểm tra bản nhạc sau nhập/xuất.
-
-Analyze Audio chạy DSP local trên tối đa 120 giây đầu. Tempo có thể lệch nửa/gấp đôi, giọng trưởng/thứ tương đối có thể nhầm; gợi ý nhịp 3/4 hoặc 4/4 chỉ là ước lượng. Khi không đủ tín hiệu sẽ báo chưa xác định. Các nhịp khác vẫn chọn thủ công. Đây chưa phải tempo map hay nhận dạng đổi giọng/đổi nhịp trong bài.
-
-Sáu bộ mẫu nhạc cụ được đóng gói local; nghe thử không cần mạng. Nguồn và ghi công: [FluidR3 GM](frontend/public/instruments/NOTICE.md). Lựa chọn nhạc cụ chỉ áp dụng cho nghe thử, chưa thay nhạc cụ trong MIDI xuất ra.
-
-### Phân tích lại bản nhạc
+### Phân tích lại bản nhạc khi muốn chọn Giọng hát(Vocal) hay Nhạc cụ (Instrument)
 
 Bấm **Quay lại bước 2 · Phân tích** phía trên quy trình (hoặc bấm **Phân tích** trên thanh bước). Nếu có chỉnh sửa chưa lưu, hãy lưu trước. Chọn lại **Giai điệu chính → Nhạc cụ / Giọng hát**, engine và các thiết lập rồi bấm **Phân tích lại audio**. Không cần upload lại audio. Các lựa chọn ở bước 2 không sửa bản nhạc đang có; có thể bấm **Quay lại bản nhạc** để hủy việc thiết lập lại.
 
@@ -115,61 +119,6 @@ Nhập tệp lời tạo revision mới và thay lớp lời đang chỉnh; revi
 - Melody được lượng tử hóa lưới 1/16 khi chuyển kết quả nhận dạng; raw events/audio vẫn được giữ trong project.
 - Sheet một bè melody. Nếu còn nốt chồng lấn, ứng dụng cho lưu bản nháp và yêu cầu sửa trước khi khắc in MusicXML/PDF.
 - Không phục hồi melody bị thiếu trong backing track, không tự nhận dạng/tạo lyrics từ audio; nhận lời do người dùng nhập SRT/LRC. Chưa chép tổng phổ hoặc TAB.
-- Hợp âm dựng để nghe/MIDI accompaniment là phần đệm tổng hợp, không phải bè chép từ bản thu.
-- Đã kiểm thử kỹ thuật, audio tổng hợp và chạy thành công một bản thu thực gần 8 phút; chưa có bộ đánh giá độ chính xác rộng trên nhạc thực. Xem [kết quả kiểm chứng](docs/VALIDATION.vi.md).
-
-## Dữ liệu và cấu trúc
-
-```text
-backend/                  API, SQLite metadata, score revisions và exporter
-frontend/                 Web UI, OSMD, audio playback và editor
-workers/                  Worker AI chạy trong process/runtime riêng
-models/registry.json      ID và revision model được ghim
-models/installed.json     Manifest snapshot đã tải, checksum và kích thước
-data/                     Dự án, audio gốc, runs, revisions và exports
-.cache/model-snapshots/   Weights/config/code model tải về máy
-.venv/                    Runtime API
-.venv-model/              Runtime model
-tests/                    Kiểm thử notation, lưu dữ liệu và API
-output/                   Tài liệu nghiên cứu/kế hoạch ban đầu
-```
-
-Audio được giữ nguyên; tệp inference và score chỉnh sửa lưu riêng. Mặc định API chỉ bind `127.0.0.1`; không mở cho LAN. Asset giao diện được bundle local. Tải model/phụ thuộc cần mạng lần đầu; inference và xử lý project dùng tài nguyên local đã cài.
-
-### Biến môi trường cấu hình
-
-| Biến môi trường | Mặc định | Chức năng |
-|---|---|---|
-| `SHEET_STUDIO_DATA` | `data/` | Thư mục lưu trữ dự án, audio và các bản xuất |
-| `SHEET_STUDIO_NETWORK_MODE` | `0` | Đặt `"1"` khi chạy backend từ xa (Google Colab, máy chủ mạng) để mở CORS |
-| `SHEET_STUDIO_ALLOWED_HOSTS` | `*` (khi bật network mode) | Danh sách domain/host được phép kết nối (phân tách bởi dấu phẩy) |
-| `SHEET_STUDIO_MAX_WORKERS` | `1` | Số tiến trình worker AI chạy đồng thời (giữ `1` để tránh tràn VRAM GPU) |
-| `SHEET_STUDIO_MAX_QUEUE` | `10` | Số lượng tác vụ tối đa chờ trong hàng đợi phân tích |
-| `SHEET_STUDIO_MAX_ACTIVE_PER_IP` | `1` | Giới hạn số bài phân tích đang xử lý cho mỗi địa chỉ IP (chống spam/DDoS) |
-| `SHEETSAGE2_PYTHON` | `None` | Đường dẫn Python runtime riêng cho worker SheetSage2 |
-| `FFMPEG_PATH` | `None` | Đường dẫn `ffmpeg` ngoài PATH (vẫn cần `ffprobe` trên PATH để kiểm tra file) |
-| `VITE_API_URL` | `""` (cùng origin) | (Frontend) Địa chỉ backend từ xa khi triển khai frontend lên Vercel |
+- **Hợp âm dựng để nghe/MIDI accompaniment là phần đệm tổng hợp, không phải bè chép từ bản thu.**
 
 ---
-
-## Phát triển và kiểm thử
-
-```powershell
-.venv\Scripts\python.exe -m pytest -q
-.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8765
-# Terminal khác:
-cd frontend
-npm run dev
-```
-
-Vite proxy `/api` tới backend. Production build do FastAPI phục vụ từ `frontend/dist`.
-
-Khi sửa phần nghe thử hoặc khuông nhạc, chạy [kiểm thử active notes và workflow](docs/PLAYBACK-QA.vi.md) trên workspace QA riêng. Script `scripts/check-playback.js` kiểm phát lại, tua qua nốt nối, thanh volume 0–100% với gain nhạc cụ được khuếch đại 5 lần, bản chưa lưu và khóa export.
-
-Tạo audio kiểm thử có nhãn nốt tham chiếu:
-
-```powershell
-.venv\Scripts\python.exe scripts/make_test_audio.py
-```
-
-Audio này chỉ kiểm đường kỹ thuật; không dùng để tuyên bố độ chính xác model trên bài hát thực.
