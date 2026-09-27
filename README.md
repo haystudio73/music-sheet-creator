@@ -37,7 +37,7 @@ Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` 
 
 <img width="1538" height="873" alt="image" src="https://github.com/user-attachments/assets/155028f4-fabd-450e-bf1c-bda36b8d48d4" />
 
-## ✨ Tính năng nổi bật & Cập nhật mới
+## ✨ Tính năng nổi bật
 
 - 🌐 **Triển khai Online linh hoạt (Vercel + Google Colab GPU T4)**:
   - **Frontend trên Vercel**: Triển khai giao diện tĩnh cực nhanh lên Vercel, hỗ trợ cấu hình tùy biến địa chỉ Backend API từ xa (`VITE_API_URL` hoặc nhập trực tiếp trên giao diện). Xem chi tiết [Hướng dẫn Vercel](docs/HUONG-DAN-CAI-DAT-VERCEL.md).
