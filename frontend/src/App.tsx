@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDownToLine, ArrowLeft, ArrowRight, AudioLines, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, FileMusic, FolderOpen, HardDrive, LoaderCircle, Languages, MessageSquareText, Menu, Moon, Music2, Pencil, Plus, Printer, RefreshCw, Save, Settings2, ShieldCheck, SlidersHorizontal, Sun, Trash, Trash2, Undo2, Upload, Wrench, X } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import { api, ApiError, errorMessage, getApiUrl, getClientSession, isActiveJob } from './api';
 import type { AnalyzeOptions, Artifact, PdfExportSource, ExportOptions, Health, Job, Project, ScoreDocument } from './types';
 import CollapsibleSection from './CollapsibleSection';
@@ -890,5 +891,6 @@ export default function App() {
         <div className="inspector-note"><FileMusic size={18}/><p><strong>{t("Lead sheet")}</strong>{t(" gồm một dòng giai điệu và ký hiệu hợp âm. Chép bè riêng cho từng nhạc cụ sẽ được mở rộng sau.")}</p></div>
       </aside>
     </div>
+    <Analytics />
   </div>;
 }
