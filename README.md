@@ -1,8 +1,8 @@
-# Ứng dụng "Bản Nhạc Local"
+# Ứng dụng "Bản Nhạc - Local"
 
 Web UI Việt/Anh chạy tại **http://127.0.0.1:8765** trên Windows 11
 
-Quy trình: **Upload file âm thanh → Dò thông số audio: nhịp, tông → Phân tích bản nhạc → Nhậ và sừa lời hát (tùy chọn) → Kiểm tra → Tải xuống / In**.
+Quy trình: **Upload file âm thanh → Dò thông số audio: nhịp, tông → Phân tích bản nhạc → Nhập và sửa lời hát (tùy chọn) → Kiểm tra → Tải xuống / In**.
 
 ## Chạy trên PC Windows
 ### Yêu cầu hệ thống:
