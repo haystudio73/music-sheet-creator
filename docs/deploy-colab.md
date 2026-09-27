@@ -70,7 +70,7 @@ Chạy cell sau để tải snapshot chính thức của mô hình:
 Chạy cell sau để thiết lập cấu hình và mở cổng Cloudflare Tunnel:
 
 ```python
-import os, sys, subprocess, time
+import os, sys, subprocess, time, re
 
 # 1. Thiết lập biến môi trường tối ưu cho Colab
 os.environ["SHEETSAGE2_PYTHON"] = sys.executable   # Dùng trực tiếp Python của Colab
@@ -85,18 +85,34 @@ os.environ["SHEET_STUDIO_ALLOWED_HOSTS"] = "*"
 !dpkg -i cloudflared-linux-amd64.deb > /dev/null 2>&1
 
 # 3. Mở Cloudflare Tunnel ngầm
-subprocess.Popen(["cloudflared", "tunnel", "--url", "http://127.0.0.1:8765"],
-                 stdout=open("/content/tunnel.log", "w"), stderr=subprocess.STDOUT)
+tunnel_log = "/content/tunnel.log"
+# Xóa log cũ (nếu có) để không đọc nhầm link cũ
+if os.path.exists(tunnel_log):
+    os.remove(tunnel_log)
 
-# Chờ 3 giây để lấy đường link public
-time.sleep(3)
-with open("/content/tunnel.log", "r") as f:
-    for line in f:
-        if "trycloudflare.com" in line:
-            print("==================================================")
-            print("👉 ĐƯỜNG LINK TRUY CẬP ỨNG DỤNG CỦA BẠN:")
-            print(line.strip())
-            print("==================================================")
+subprocess.Popen(["cloudflared", "tunnel", "--url", "http://127.0.0.1:8765"],
+                 stdout=open(tunnel_log, "w"), stderr=subprocess.STDOUT)
+
+# Vòng lặp chờ Cloudflare cấp link chính thức (thường mất 3 - 8 giây)
+print("⏳ Đang kết nối Cloudflare Tunnel, vui lòng đợi vài giây...")
+tunnel_url = None
+for _ in range(25):
+    time.sleep(1)
+    if os.path.exists(tunnel_log):
+        with open(tunnel_log, "r") as f:
+            content = f.read()
+            match = re.search(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", content)
+            if match:
+                tunnel_url = match.group(0)
+                break
+
+if tunnel_url:
+    print("\n" + "=" * 60)
+    print("👉 ĐƯỜNG LINK TRUY CẬP ỨNG DỤNG CỦA BẠN:")
+    print(f"🔗 {tunnel_url}")
+    print("=" * 60 + "\n")
+else:
+    print("\n⚠️ Chưa tìm thấy link tự động. Hãy chạy cell phụ: !cat /content/tunnel.log")
 
 # 4. Khởi chạy Backend FastAPI + Web UI
 !python -m uvicorn backend.app:app --host 0.0.0.0 --port 8765
