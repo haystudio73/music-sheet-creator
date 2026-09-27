@@ -17,7 +17,28 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 
 Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` trong PATH). `setup.ps1` tạo runtime Python 3.12 và cài đúng các phiên bản trong `requirements.lock`. Python của model dùng môi trường 3.11 riêng. Không cần Node.js khi chỉ chạy frontend đã build. PDF được tạo trực tiếp trong trình duyệt bằng JavaScript, không cần cài MuseScore.
 
-Triển khai online: xem [Hướng dẫn cài đặt trên Vercel](docs/HUONG-DAN-CAI-DAT-VERCEL.md) (kết nối web UI Vercel với backend) hoặc [Hướng dẫn chạy trên Google Colab GPU T4](docs/deploy-colab.md).
+## ✨ Tính năng nổi bật & Cập nhật mới
+
+- 🌐 **Triển khai Online linh hoạt (Vercel + Google Colab GPU T4)**:
+  - **Frontend trên Vercel**: Triển khai giao diện tĩnh cực nhanh lên Vercel, hỗ trợ cấu hình tùy biến địa chỉ Backend API từ xa (`VITE_API_URL` hoặc nhập trực tiếp trên giao diện). Xem chi tiết [Hướng dẫn Vercel](docs/HUONG-DAN-CAI-DAT-VERCEL.md).
+  - **Backend AI trên Google Colab**: Chạy toàn bộ backend FastAPI + model SheetSage2/MERT-v2 trên GPU NVIDIA T4 miễn phí, tự động kết nối qua Cloudflare Tunnel (`trycloudflare.com`). Xem chi tiết [Hướng dẫn Google Colab](docs/deploy-colab.md).
+  - **Chế độ Network Mode an toàn**: Hỗ trợ biến môi trường `SHEET_STUDIO_NETWORK_MODE`, kiểm soát CORS, giới hạn số tác vụ đồng thời trên mỗi IP (`SHEET_STUDIO_MAX_ACTIVE_PER_IP`) và hàng đợi xử lý chống tràn VRAM.
+- 📄 **Xuất PDF Vector A4 & In ấn trực tiếp (Print)**:
+  - **PDF Vector chuẩn in ấn**: Tạo trực tiếp trong trình duyệt bằng OpenSheetMusicDisplay + jsPDF + svg2pdf.js, không cần MuseScore hay dịch vụ backend bên ngoài.
+  - **Nhúng font Noto Sans tiếng Việt**: Đảm bảo toàn bộ dấu thanh tiếng Việt và ký tự quốc tế hiển thị sắc nét, chuẩn xác.
+  - **Tùy biến xuất nâng cao**: Cho phép chọn trích xuất phạm vi ô nhịp (`Từ ô... Đến ô...`), bật/tắt hợp âm (chords) và lời bài hát (lyrics).
+  - **Nút In bản nhạc (Print)**: Tích hợp chế độ `@media print` chuyên dụng, tự động ẩn các thanh công cụ, tối ưu căn lề giấy A4 và khắc phục hoàn toàn lỗi trang trắng xem trước khi in.
+- ✏️ **Chỉnh sửa Tên Bài hát trực tiếp**:
+  - Nhấp đúp hoặc bấm biểu tượng chỉnh sửa trên tiêu đề H1 và trong bảng Inspector để đổi tên bài hát.
+  - Tự động đồng bộ tên mới vào cơ sở dữ liệu và file MusicXML thông qua API `PATCH /api/projects/{id}`.
+- 🎨 **Cải tiến Giao diện & Trải nghiệm (UI/UX)**:
+  - Đường viền nổi bật (focus outlines) trực quan cho từng bước của quy trình: *1. Upload → 2. Phân tích → 3. Thêm lời → 4. Kiểm tra & Xuất*.
+  - Nút **Dò thông số audio (Analyze Audio)** được làm nổi bật với sắc xanh hiện đại, dễ nhận biết.
+  - Tự động lưu trữ cài đặt API endpoint, cấu hình hiển thị và font chữ lời hát vào LocalStorage.
+- 🎼 **Trình soạn thảo nốt nhạc chuyên sâu (Smoosic Editor)**:
+  - Tích hợp sâu Smoosic 1.0.44 chạy hoàn toàn local; chỉnh sửa cao độ (phím A–G, `=`/`-`), trường độ, lời ca, ô nhịp; lưu lịch sử phiên bản (`v1.json`, `v2.json`...) an toàn và kiểm tra xung đột đa tab.
+
+---
 
 ## Hai bộ phân tích khác nhau
 
@@ -43,7 +64,10 @@ Xem [hướng dẫn model](docs/model-setup.md) về phiên bản, bộ nhớ, �
 3. **Phân tích bản nhạc:** chọn engine, nguồn melody (nhạc cụ/giọng hát), chỉnh thông số rồi chạy phiên âm. Có thể hủy tác vụ.
 4. **Lời hát (tùy chọn):** nhập SRT/LRC, căn và sửa lời. Có thể xóa/reset rồi nhập lại.
 5. **Kiểm tra:** nghe audio gốc và bản dựng lại, sửa nốt/hợp âm/lời; lưu rồi bấm **Xác nhận đã kiểm tra**.
-6. **Tải xuống:** MusicXML, MIDI, PDF hoặc ABC chỉ mở khi bản hiện tại đã được xác nhận. Sửa tiếp sẽ yêu cầu lưu và kiểm tra lại. PDF dàn trang A4 tự động bằng OpenSheetMusicDisplay và tạo file vector bằng jsPDF/svg2pdf.js; giữ tùy chọn trích ô nhịp, hợp âm và lời hát. Font Noto Sans được nhúng để giữ dấu tiếng Việt khi in. Thư viện và font được đóng gói local; không gọi dịch vụ tạo PDF bên ngoài.
+6. **Tải xuống & In ấn:** MusicXML, MIDI, PDF hoặc ABC chỉ mở khi bản hiện tại đã được xác nhận. Sửa tiếp sẽ yêu cầu lưu và kiểm tra lại:
+   - **Xuất PDF vector A4:** Dàn trang A4 tự động bằng OpenSheetMusicDisplay và xuất file vector bằng jsPDF/svg2pdf.js; hỗ trợ tùy chọn khoảng ô nhịp (`Từ ô... Đến ô...`), bật/tắt hợp âm và lời hát. Font Noto Sans được nhúng sẵn giữ trọn vẹn dấu tiếng Việt khi in. Thư viện và font được đóng gói local; không gọi dịch vụ tạo PDF bên ngoài.
+   - **In bản nhạc trực tiếp (Print):** Bấm **In bản nhạc** để mở hộp thoại in của trình duyệt; CSS `@media print` được tối ưu chuyên dụng để ẩn toàn bộ thanh điều khiển thừa, tự động căn lề và xử lý hiển thị chống trang trắng xem trước.
+   - **Đổi tên bài hát:** Bấm đúp hoặc icon bút chì cạnh tiêu đề H1 / Inspector để đổi tên bài; tên mới sẽ tự động lưu và xuất hiện trên bản in PDF & MusicXML.
 
 Mỗi lần lưu tạo revision mới. Phân tích lại một dự án đã có sheet tạo bản nháp riêng; phải chọn sử dụng thì mới thay bản đang chỉnh. API chỉ cho tải revision hiện tại đã xác nhận; đường tải file cũ cũng bị khóa sau khi lưu bản sửa. Xem khuông nhạc và nghe thử vẫn dùng được trước khi xác nhận.
 
@@ -112,7 +136,21 @@ output/                   Tài liệu nghiên cứu/kế hoạch ban đầu
 
 Audio được giữ nguyên; tệp inference và score chỉnh sửa lưu riêng. Mặc định API chỉ bind `127.0.0.1`; không mở cho LAN. Asset giao diện được bundle local. Tải model/phụ thuộc cần mạng lần đầu; inference và xử lý project dùng tài nguyên local đã cài.
 
-Biến môi trường tùy chọn: `SHEET_STUDIO_DATA` (thư mục project), `FFMPEG_PATH` (adapter audio), `SHEETSAGE2_PYTHON` (runtime model). Khi dùng FFmpeg ngoài PATH, vẫn cần `ffprobe` trên PATH để kiểm file upload.
+### Biến môi trường cấu hình
+
+| Biến môi trường | Mặc định | Chức năng |
+|---|---|---|
+| `SHEET_STUDIO_DATA` | `data/` | Thư mục lưu trữ dự án, audio và các bản xuất |
+| `SHEET_STUDIO_NETWORK_MODE` | `0` | Đặt `"1"` khi chạy backend từ xa (Google Colab, máy chủ mạng) để mở CORS |
+| `SHEET_STUDIO_ALLOWED_HOSTS` | `*` (khi bật network mode) | Danh sách domain/host được phép kết nối (phân tách bởi dấu phẩy) |
+| `SHEET_STUDIO_MAX_WORKERS` | `1` | Số tiến trình worker AI chạy đồng thời (giữ `1` để tránh tràn VRAM GPU) |
+| `SHEET_STUDIO_MAX_QUEUE` | `10` | Số lượng tác vụ tối đa chờ trong hàng đợi phân tích |
+| `SHEET_STUDIO_MAX_ACTIVE_PER_IP` | `1` | Giới hạn số bài phân tích đang xử lý cho mỗi địa chỉ IP (chống spam/DDoS) |
+| `SHEETSAGE2_PYTHON` | `None` | Đường dẫn Python runtime riêng cho worker SheetSage2 |
+| `FFMPEG_PATH` | `None` | Đường dẫn `ffmpeg` ngoài PATH (vẫn cần `ffprobe` trên PATH để kiểm tra file) |
+| `VITE_API_URL` | `""` (cùng origin) | (Frontend) Địa chỉ backend từ xa khi triển khai frontend lên Vercel |
+
+---
 
 ## Phát triển và kiểm thử
 
