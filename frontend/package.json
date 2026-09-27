@@ -11,6 +11,7 @@
     "predev": "node scripts/prepare-editor.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "jquery": "3.7.1",
     "jspdf": "4.2.1",
     "lucide-react": "^0.468.0",
