@@ -33,8 +33,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
-Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` trong PATH). `setup.ps1` tạo runtime Python 3.12 và cài đúng các phiên bản trong `requirements.lock`. Python của model dùng môi trường 3.11 riêng. Không cần Node.js khi chỉ chạy frontend đã build. PDF được tạo trực tiếp trong trình duyệt bằng JavaScript, không cần cài MuseScore.
-
 <img width="1538" height="873" alt="image" src="https://github.com/user-attachments/assets/155028f4-fabd-450e-bf1c-bda36b8d48d4" />
 
 ## ✨ Tính năng nổi bật
@@ -63,7 +61,7 @@ Cần `uv`, Node.js 22+ để build giao diện, FFmpeg (`ffmpeg` và `ffprobe` 
 | **SheetSage2 · Hugging Face** | Thử phiên âm melody và hợp âm từ bản phối bằng model local | Cần cài riêng model/runtime; kiểm tra kết quả trước khi sử dụng |
 | **Giai điệu đơn · DSP thử nghiệm** | Một giai điệu solo sạch, mỗi thời điểm một nốt | Không phải AI; không tách melody trong bản phối và không đoán hợp âm |
 
-Giao diện đọc trạng thái cài đặt thực tế. Nếu model chưa sẵn sàng, ứng dụng báo lý do; không tạo kết quả giả hoặc âm thầm gửi audio lên cloud.
+Giao diện đọc trạng thái cài đặt thực tế. Nếu model chưa sẵn sàng, ứng dụng báo lý do; ## *không tạo kết quả giả hoặc âm thầm gửi audio lên cloud.*
 
 Để cài SheetSage2 và model cha MERT-v2:
 
@@ -87,7 +85,8 @@ Xem [hướng dẫn model](docs/model-setup.md) về phiên bản, bộ nhớ, �
 
 Mỗi lần lưu tạo revision mới. Phân tích lại một dự án đã có sheet tạo bản nháp riêng; phải chọn sử dụng thì mới thay bản đang chỉnh. API chỉ cho tải revision hiện tại đã xác nhận; đường tải file cũ cũng bị khóa sau khi lưu bản sửa. Xem khuông nhạc và nghe thử vẫn dùng được trước khi xác nhận.
 
-Khi nghe giai điệu dựng lại, kéo thanh vị trí để tua tới/lùi (cũng dùng được trước khi bấm phát), chỉnh **Âm lượng** từ 0–100%. Ở mức 100%, gain nhạc cụ là 0,8 — gấp 5 lần gain cũ tại 100%; compressor vẫn hạn chế đỉnh âm. Bộ đếm ô nhịp/phách có tiếng click và âm lượng riêng. Nhịp kép 6/8, 9/8, 12/8 đếm theo phách đen chấm dôi. Bấm dừng để về đầu. Khuông nhạc và màu nốt đồng bộ cả bản sửa chưa lưu, nốt nối qua ô nhịp và khi tua/nghe lại.
+Khi nghe giai điệu dựng lại, kéo thanh vị trí để tua tới/lùi (cũng dùng được trước khi bấm phát), chỉnh **Âm lượng** từ 0–100%. 
+Ở mức 100%, gain nhạc cụ là 0,8 — gấp 5 lần gain cũ tại 100%; compressor vẫn hạn chế đỉnh âm. Bộ đếm ô nhịp/phách có tiếng click và âm lượng riêng. Nhịp kép 6/8, 9/8, 12/8 đếm theo phách đen chấm dôi. Bấm dừng để về đầu. Khuông nhạc và màu nốt đồng bộ cả bản sửa chưa lưu, nốt nối qua ô nhịp và khi tua/nghe lại.
 
 **Cài đặt** lưu tại trình duyệt: tự dò thông số sau upload, tự cuộn khi nghe, màu active notes, ngôn ngữ VI/EN và 10 font lời hát. Font chỉ áp dụng cho lời trên khuông nhạc và ô nhập lời; tên bè, tempo, hợp âm và số ô nhịp giữ nguyên. PDF dùng font Noto Sans nhúng sẵn; lựa chọn font lời hát chỉ áp dụng cho phần xem/chỉnh lời. Chọn **Thiết bị xử lý → Auto / GPU · CUDA / CPU only** cho lần chạy SheetSage2 tiếp theo. Auto ưu tiên CUDA; GPU báo lỗi nếu CUDA không khả dụng; CPU only ẩn CUDA khỏi worker và dùng FP32. Dò audio và DSP luôn dùng CPU. Tác vụ đang chạy giữ lựa chọn lúc bắt đầu.
 
@@ -113,12 +112,22 @@ Mở dự án cần xóa, bấm **Xóa dự án** phía trên quy trình và xá
 
 Nhập tệp lời tạo revision mới và thay lớp lời đang chỉnh; revision cũ được giữ. Cần lưu chỉnh sửa trước khi nhập. Nếu dùng bản phân tích AI mới có bộ nốt khác, hãy nhập/căn lời lại. Xem [chi tiết định dạng và căn lời](docs/LYRICS.vi.md).
 
-## Giới hạn phiên bản 0.1
+## Giới hạn phiên bản V0.1
 
-- Score dùng **tempo, meter và key cố định do người dùng chọn**; chưa tự dựng tempo map/rubato/đổi nhịp từ AI.
+- Score dùng **tempo, meter và key cố định do người dùng chọn**; chưa tự dựng tempo map/rubato/đổi nhịp từ AI (không sử dụng AI, API ...)
 - Melody được lượng tử hóa lưới 1/16 khi chuyển kết quả nhận dạng; raw events/audio vẫn được giữ trong project.
-- Sheet một bè melody. Nếu còn nốt chồng lấn, ứng dụng cho lưu bản nháp và yêu cầu sửa trước khi khắc in MusicXML/PDF.
+- Sheet một bè melody. Nếu còn nốt chồng lấn, ứng dụng cho lưu bản nháp và yêu cầu sửa trước khi in MusicXML/PDF.
 - Không phục hồi melody bị thiếu trong backing track, không tự nhận dạng/tạo lyrics từ audio; nhận lời do người dùng nhập SRT/LRC. Chưa chép tổng phổ hoặc TAB.
 - **Hợp âm dựng để nghe/MIDI accompaniment là phần đệm tổng hợp, không phải bè chép từ bản thu.**
+- **Phiên bản cover bằng AI sẽ có trong tương lai**
 
 ---
+
+## Buy me a coffee!!
+
+❤️❤️❤️ Nếu bạn yêu thích mã nguồn này ❤️❤️❤️ HÃY MỜI TÔI 1 LY CAFE (Momo QR)!
+
+<img width="390" height="422" alt="image" src="https://github.com/user-attachments/assets/ba0993b0-264f-4c49-9f05-d8fd3050902a" />
+
+## Thanks, and good luck!
+
